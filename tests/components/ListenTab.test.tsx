@@ -55,6 +55,20 @@ describe('ListenTab', () => {
     expect(stop).toHaveBeenCalled()
   })
 
+  it('shows aria-label "停止朗读" when voiceState is "speaking"', () => {
+    const props = makeProps({ voiceState: 'speaking' as VoiceState })
+    render(<ListenTab {...props} />)
+    expect(screen.getByRole('button', { name: '停止朗读' })).toBeInTheDocument()
+  })
+
+  it('calls stop() when mic tapped while speaking', () => {
+    const stop = vi.fn()
+    const props = makeProps({ voiceState: 'speaking' as VoiceState, stop })
+    render(<ListenTab {...props} />)
+    fireEvent.click(screen.getByRole('button', { name: '停止朗读' }))
+    expect(stop).toHaveBeenCalled()
+  })
+
   it('displays poem and calls speakLines when title found in library', () => {
     let capturedOnResult: ((text: string) => void) | null = null
     const startListening = vi.fn((onResult) => { capturedOnResult = onResult })
@@ -67,7 +81,7 @@ describe('ListenTab', () => {
     act(() => capturedOnResult!('静夜思'))
 
     expect(screen.getAllByText('静夜思').length).toBeGreaterThan(0)
-    expect(screen.getByText('李白')).toBeInTheDocument()
+    expect(screen.getByText('李白 · 唐')).toBeInTheDocument()
     expect(screen.getByText('床前明月光')).toBeInTheDocument()
     expect(speakLines).toHaveBeenCalledWith(
       poem.lines,

@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { SavedPoem, VoiceState } from '../types'
 import { searchPoems } from '../data/PoemSearch'
+import { DYNASTY_LABEL } from '../constants'
 
 interface ListenTabProps {
   voiceState: VoiceState
@@ -25,9 +26,11 @@ export function ListenTab({
   const [highlightedLine, setHighlightedLine] = useState<number | null>(null)
   const [notFound, setNotFound] = useState(false)
   const [textQuery, setTextQuery] = useState('')
+  const autoPlayedRef = useRef(false)
 
   useEffect(() => {
-    if (initialPoem) {
+    if (initialPoem && !autoPlayedRef.current) {
+      autoPlayedRef.current = true
       setCurrentPoem(initialPoem)
       speakLines(
         initialPoem.lines,
@@ -35,9 +38,7 @@ export function ListenTab({
         () => setHighlightedLine(null)
       )
     }
-    // Only run on mount
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [initialPoem, speakLines])
 
   const statusText = voiceState === 'listening'
     ? '正在听...'
@@ -65,6 +66,7 @@ export function ListenTab({
 
   function handleMicClick() {
     if (voiceState === 'idle') {
+      setNotFound(false)
       startListening((text) => {
         handleSearch(text)
       })
@@ -90,7 +92,13 @@ export function ListenTab({
       {isSTTSupported ? (
         <button
           className={`mic-button${voiceState === 'listening' ? ' active' : ''}`}
-          aria-label={voiceState === 'listening' ? '停止录音' : '开始录音'}
+          aria-label={
+            voiceState === 'listening'
+              ? '停止录音'
+              : voiceState === 'speaking'
+              ? '停止朗读'
+              : '开始录音'
+          }
           onClick={handleMicClick}
         >
           {voiceState === 'listening' ? '🎙️' : '🎤'}
@@ -100,6 +108,7 @@ export function ListenTab({
           <input
             type="text"
             placeholder="输入诗名..."
+            aria-label="诗名"
             lang="zh-CN"
             value={textQuery}
             onChange={(e) => setTextQuery(e.target.value)}
@@ -112,7 +121,7 @@ export function ListenTab({
       {currentPoem && (
         <div className="poem-display">
           <h2 className="poem-title">{currentPoem.title}</h2>
-          <p className="poem-author">{currentPoem.author}</p>
+          <p className="poem-author">{currentPoem.author} · {DYNASTY_LABEL[currentPoem.dynasty] ?? currentPoem.dynasty}</p>
           <div className="poem-lines">
             {currentPoem.lines.map((line, i) => (
               <p
