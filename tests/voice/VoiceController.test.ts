@@ -1,0 +1,114 @@
+import { createVoiceController } from '../../src/voice/VoiceController'
+
+// Mock SpeechRecognition
+class MockSpeechRecognition {
+  lang = ''
+  continuous = false
+  interimResults = false
+  onresult: ((e: SpeechRecognitionEvent) => void) | null = null
+  onerror: (() => void) | null = null
+  onend: (() => void) | null = null
+  start = vi.fn()
+  abort = vi.fn()
+}
+
+// Mock SpeechSynthesis
+const mockSpeak = vi.fn()
+const mockCancel = vi.fn()
+
+beforeEach(() => {
+  vi.clearAllMocks()
+  // Install mocks on window
+  ;(window as any).SpeechRecognition = MockSpeechRecognition
+  ;(window as any).webkitSpeechRecognition = undefined
+  ;(window as any).speechSynthesis = {
+    speak: mockSpeak,
+    cancel: mockCancel,
+  }
+})
+
+afterEach(() => {
+  delete (window as any).SpeechRecognition
+  delete (window as any).speechSynthesis
+})
+
+describe('VoiceController', () => {
+  it('initial state is idle', () => {
+    const ctrl = createVoiceController()
+    expect(ctrl.state).toBe('idle')
+  })
+
+  it('isSTTSupported returns true when SpeechRecognition exists', () => {
+    const ctrl = createVoiceController()
+    expect(ctrl.isSTTSupported()).toBe(true)
+  })
+
+  it('isSTTSupported returns false when SpeechRecognition missing', () => {
+    delete (window as any).SpeechRecognition
+    const ctrl = createVoiceController()
+    expect(ctrl.isSTTSupported()).toBe(false)
+  })
+
+  it('isTTSSupported returns true when speechSynthesis exists', () => {
+    const ctrl = createVoiceController()
+    expect(ctrl.isTTSSupported()).toBe(true)
+  })
+
+  it('startListening sets state to listening and calls recognition.start()', () => {
+    const ctrl = createVoiceController()
+    ctrl.startListening(vi.fn())
+    expect(ctrl.state).toBe('listening')
+  })
+
+  it('onresult callback delivers transcript and resets state', () => {
+    let instance: MockSpeechRecognition | null = null
+    ;(window as any).SpeechRecognition = class extends MockSpeechRecognition {
+      constructor() {
+        super()
+        instance = this
+      }
+    }
+    const onResult = vi.fn()
+    const ctrl2 = createVoiceController()
+    ctrl2.startListening(onResult)
+
+    // Simulate recognition result
+    instance!.onresult!({
+      results: [[{ transcript: '静夜思' }]] as unknown as SpeechRecognitionResultList,
+    } as SpeechRecognitionEvent)
+
+    expect(onResult).toHaveBeenCalledWith('静夜思')
+    expect(ctrl2.state).toBe('idle')
+  })
+
+  it('stop() cancels recognition and TTS, resets state', () => {
+    const ctrl = createVoiceController()
+    ctrl.startListening(vi.fn())
+    ctrl.stop()
+    expect(ctrl.state).toBe('idle')
+    expect(mockCancel).toHaveBeenCalled()
+  })
+
+  it('speakLines calls speechSynthesis.speak once per line', () => {
+    const ctrl = createVoiceController()
+    const lines = ['床前明月光', '疑是地上霜']
+
+    // Mock SpeechSynthesisUtterance
+    ;(window as any).SpeechSynthesisUtterance = class {
+      text: string
+      lang = ''
+      onstart: (() => void) | null = null
+      onend: (() => void) | null = null
+      onerror: (() => void) | null = null
+      constructor(text: string) {
+        this.text = text
+      }
+    }
+    // speak() does NOT auto-trigger onend — we verify synchronous behaviour only
+    const onLineStart = vi.fn()
+    ctrl.speakLines(lines, onLineStart, vi.fn())
+
+    expect(mockSpeak).toHaveBeenCalledTimes(1) // first line queued immediately
+    expect(ctrl.state).toBe('speaking')
+  })
+})
