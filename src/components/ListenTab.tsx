@@ -11,6 +11,8 @@ interface ListenTabProps {
   isSTTSupported: boolean
   libraryPoems: SavedPoem[]
   initialPoem?: SavedPoem
+  ttsRate: number
+  setTtsRate: (rate: number) => void
 }
 
 export function ListenTab({
@@ -21,6 +23,8 @@ export function ListenTab({
   isSTTSupported,
   libraryPoems,
   initialPoem,
+  ttsRate,
+  setTtsRate,
 }: ListenTabProps) {
   const [currentPoem, setCurrentPoem] = useState<SavedPoem | null>(null)
   const [highlightedLine, setHighlightedLine] = useState<number | null>(null)
@@ -130,8 +134,8 @@ export function ListenTab({
           onStop={stop}
           isPlaying={voiceState === 'speaking'}
           highlightedLine={highlightedLine}
-          ttsRate={1.0}
-          setTtsRate={() => {}}
+          ttsRate={ttsRate}
+          setTtsRate={setTtsRate}
         />
       )}
     </div>

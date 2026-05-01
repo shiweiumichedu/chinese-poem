@@ -21,6 +21,8 @@ function makeProps(overrides = {}) {
     stop: vi.fn(),
     isSTTSupported: true,
     libraryPoems: [],
+    ttsRate: 1.0,
+    setTtsRate: vi.fn(),
     ...overrides,
   }
 }

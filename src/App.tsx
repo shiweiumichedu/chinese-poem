@@ -12,7 +12,7 @@ function App() {
   const [selectedPoem, setSelectedPoem] = useState<SavedPoem | undefined>(undefined)
 
   const { corpus, loading: corpusLoading, error: corpusError } = useCorpus()
-  const { voiceState, startListening, speakLines, stop, isSTTSupported } = useVoiceController()
+  const { voiceState, startListening, speakLines, stop, isSTTSupported, ttsRate, setTtsRate } = useVoiceController()
   const sttSupported = isSTTSupported()
 
   useEffect(() => {
@@ -50,6 +50,8 @@ function App() {
             {...voiceProps}
             libraryPoems={libraryPoems}
             initialPoem={selectedPoem}
+            ttsRate={ttsRate}
+            setTtsRate={setTtsRate}
           />
         ) : (
           <LibraryTab
