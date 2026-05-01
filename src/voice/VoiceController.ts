@@ -41,7 +41,7 @@ export function createVoiceController(): VoiceController {
       recognition.lang = 'zh-CN'
       recognition.continuous = false
       recognition.interimResults = false
-      recognition.onresult = (event) => {
+      recognition.onresult = (event: SpeechRecognitionEvent) => {
         const text = event.results[0][0].transcript
         state = 'idle'
         onResult(text)
