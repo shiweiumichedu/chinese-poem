@@ -23,7 +23,7 @@ async function loadAuthorMap(url) {
   }
 }
 
-async function loadPoemFiles(urlPattern, dynasty, authorMap, maxFileIndex) {
+async function loadPoemFiles(urlPattern, dynasty, authorMap, maxFileIndex, maxPoems) {
   const poems = []
   for (let i = 0; i <= maxFileIndex; i += 1000) {
     const url = urlPattern.replace('${N}', i)
@@ -39,8 +39,10 @@ async function loadPoemFiles(urlPattern, dynasty, authorMap, maxFileIndex) {
           authorBackground: '',
           lines: p.paragraphs.map(l => l.trim()).filter(Boolean),
         })
+        if (maxPoems && poems.length >= maxPoems) break
       }
       process.stdout.write(`\r  ${dynasty}: ${poems.length} poems loaded (file ${i})...`)
+      if (maxPoems && poems.length >= maxPoems) break
     } catch {
       // File doesn't exist — we've gone past the last file
       break
@@ -67,7 +69,8 @@ async function main() {
     `${TANG_DIR}/poet.tang.\${N}.json`,
     'tang',
     tangAuthors,
-    57000
+    57000,
+    15000
   )
 
   // Song shi (诗) poems are in the same 全唐诗/ directory as Tang poems
@@ -76,7 +79,8 @@ async function main() {
     `${TANG_DIR}/poet.song.\${N}.json`,
     'song',
     songAuthors,
-    254000
+    254000,
+    15000
   )
 
   const corpus = [...tangPoems, ...songPoems]
