@@ -2,6 +2,12 @@ import { useState } from 'react'
 import type { SavedPoem } from '../types'
 import { DYNASTY_LABEL } from '../constants'
 
+const SPEED_PRESETS = [
+  { label: '慢', rate: 0.7 },
+  { label: '正常', rate: 1.0 },
+  { label: '快', rate: 1.4 },
+] as const
+
 interface PoemPlayerProps {
   poem: SavedPoem
   onPlay: (
@@ -10,14 +16,15 @@ interface PoemPlayerProps {
     onDone: () => void
   ) => void
   onStop: () => void
-  isPlaying: boolean  // controlled from parent (voiceState === 'speaking')
-  highlightedLine?: number | null  // external override when auto-played
+  isPlaying: boolean
+  highlightedLine?: number | null
+  ttsRate: number
+  setTtsRate: (rate: number) => void
 }
 
-export function PoemPlayer({ poem, onPlay, onStop, isPlaying, highlightedLine }: PoemPlayerProps) {
+export function PoemPlayer({ poem, onPlay, onStop, isPlaying, highlightedLine, ttsRate, setTtsRate }: PoemPlayerProps) {
   const [internalHighlight, setInternalHighlight] = useState<number | null>(null)
 
-  // Use external highlight when provided (auto-play from parent), else use internal
   const displayHighlight = highlightedLine !== undefined ? highlightedLine : internalHighlight
 
   function handlePlay() {
@@ -46,6 +53,18 @@ export function PoemPlayer({ poem, onPlay, onStop, isPlaying, highlightedLine }:
           >
             {line}
           </p>
+        ))}
+      </div>
+      <div className="speed-presets">
+        {SPEED_PRESETS.map(({ label, rate }) => (
+          <button
+            key={rate}
+            className={`btn-speed${ttsRate === rate ? ' active' : ''}`}
+            aria-pressed={ttsRate === rate}
+            onClick={() => setTtsRate(rate)}
+          >
+            {label}
+          </button>
         ))}
       </div>
       <div className="poem-controls">

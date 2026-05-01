@@ -130,6 +130,8 @@ export function ListenTab({
           onStop={stop}
           isPlaying={voiceState === 'speaking'}
           highlightedLine={highlightedLine}
+          ttsRate={1.0}
+          setTtsRate={() => {}}
         />
       )}
     </div>
