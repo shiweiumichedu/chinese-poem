@@ -1,0 +1,76 @@
+import { renderHook, act, waitFor } from '@testing-library/react'
+import { useCorpus } from '../../src/hooks/useCorpus'
+
+const rawPoems = [
+  {
+    id: '1',
+    title: '静夜思',
+    author: '李白',
+    dynasty: 'tang',
+    authorBackground: '',
+    lines: ['床前明月光'],
+  },
+]
+const authors = { '李白': '唐代诗人' }
+
+function makeFetch(poemsData: unknown, authorsData: unknown) {
+  return vi.fn().mockImplementation((url: string) => {
+    const data = url.includes('authors') ? authorsData : poemsData
+    return Promise.resolve({
+      ok: true,
+      json: () => Promise.resolve(data),
+    })
+  })
+}
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
+
+describe('useCorpus', () => {
+  it('loading starts true and becomes false after fetch resolves', async () => {
+    vi.stubGlobal('fetch', makeFetch(rawPoems, authors))
+
+    const { result } = renderHook(() => useCorpus())
+
+    expect(result.current.loading).toBe(true)
+
+    await waitFor(() => expect(result.current.loading).toBe(false))
+  })
+
+  it('joins author backgrounds from authors.json', async () => {
+    vi.stubGlobal('fetch', makeFetch(rawPoems, authors))
+
+    const { result } = renderHook(() => useCorpus())
+
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    expect(result.current.corpus).toHaveLength(1)
+    expect(result.current.corpus[0].authorBackground).toBe('唐代诗人')
+    expect(result.current.error).toBeNull()
+  })
+
+  it('missing author falls back to empty string', async () => {
+    vi.stubGlobal('fetch', makeFetch(rawPoems, {}))
+
+    const { result } = renderHook(() => useCorpus())
+
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    expect(result.current.corpus[0].authorBackground).toBe('')
+  })
+
+  it('sets error when fetch fails and loading becomes false', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockRejectedValue(new Error('Network error'))
+    )
+
+    const { result } = renderHook(() => useCorpus())
+
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    expect(result.current.error).toBe('Network error')
+    expect(result.current.corpus).toHaveLength(0)
+  })
+})
