@@ -19,6 +19,15 @@ const corpusPoem: CorpusPoem = {
   lines: ['床前明月光'],
 }
 
+const corpusPoem2: CorpusPoem = {
+  id: 'c2',
+  title: '春晓',
+  author: '孟浩然',
+  dynasty: 'tang',
+  authorBackground: '',
+  lines: ['春眠不觉晓'],
+}
+
 const savedPoem: SavedPoem = { ...corpusPoem, addedAt: 1000 }
 
 function makeProps(overrides = {}) {
@@ -28,7 +37,7 @@ function makeProps(overrides = {}) {
     speakLines: vi.fn(),
     stop: vi.fn(),
     isSTTSupported: true,
-    corpus: [corpusPoem],
+    corpus: [corpusPoem, corpusPoem2],
     corpusLoading: false,
     savedPoems: [],
     onPoemSelect: vi.fn(),
@@ -38,6 +47,8 @@ function makeProps(overrides = {}) {
 }
 
 describe('LibraryTab', () => {
+  // ── 我的诗库 sub-tab (default) ──
+
   it('shows empty state when savedPoems is empty', () => {
     render(<LibraryTab {...makeProps()} />)
     expect(screen.getByText('诗库为空，请添加诗词')).toBeInTheDocument()
@@ -54,11 +65,6 @@ describe('LibraryTab', () => {
     render(<LibraryTab {...makeProps({ savedPoems: [savedPoem], onPoemSelect })} />)
     fireEvent.click(screen.getByText('静夜思').closest('button')!)
     expect(onPoemSelect).toHaveBeenCalledWith(savedPoem)
-  })
-
-  it('shows "正在加载诗库..." when corpusLoading is true', () => {
-    render(<LibraryTab {...makeProps({ corpusLoading: true })} />)
-    expect(screen.getByText('正在加载诗库...')).toBeInTheDocument()
   })
 
   it('tapping add button calls startListening', () => {
@@ -78,7 +84,6 @@ describe('LibraryTab', () => {
 
     act(() => capturedOnResult!('静夜思'))
 
-    // PoemPreview should be visible with confirm/cancel buttons
     expect(screen.getByRole('button', { name: '确认添加' })).toBeInTheDocument()
     expect(speakLines).toHaveBeenCalledWith(
       [expect.stringContaining('静夜思')],
@@ -159,5 +164,71 @@ describe('LibraryTab', () => {
     fireEvent.change(input, { target: { value: '静夜思' } })
     fireEvent.keyDown(input, { key: 'Enter' })
     expect(screen.getByRole('button', { name: '确认添加' })).toBeInTheDocument()
+  })
+
+  // ── Sub-tab navigation ──
+
+  it('renders 我的诗库 and 浏览诗库 sub-tab buttons', () => {
+    render(<LibraryTab {...makeProps()} />)
+    expect(screen.getByRole('button', { name: '我的诗库' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '浏览诗库' })).toBeInTheDocument()
+  })
+
+  it('defaults to 我的诗库 sub-tab', () => {
+    render(<LibraryTab {...makeProps()} />)
+    expect(screen.getByRole('button', { name: '我的诗库' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('button', { name: '浏览诗库' })).toHaveAttribute('aria-selected', 'false')
+  })
+
+  it('switching to 浏览诗库 shows the browse search input', () => {
+    render(<LibraryTab {...makeProps()} />)
+    fireEvent.click(screen.getByRole('button', { name: '浏览诗库' }))
+    expect(screen.getByPlaceholderText('搜索诗库...')).toBeInTheDocument()
+  })
+
+  // ── 浏览诗库 sub-tab ──
+
+  it('shows "正在加载诗库..." in browse tab when corpusLoading is true', () => {
+    render(<LibraryTab {...makeProps({ corpusLoading: true })} />)
+    fireEvent.click(screen.getByRole('button', { name: '浏览诗库' }))
+    expect(screen.getByText('正在加载诗库...')).toBeInTheDocument()
+  })
+
+  it('shows first 50 corpus poems by default in browse tab', () => {
+    render(<LibraryTab {...makeProps()} />)
+    fireEvent.click(screen.getByRole('button', { name: '浏览诗库' }))
+    expect(screen.getByText('静夜思')).toBeInTheDocument()
+    expect(screen.getByText('春晓')).toBeInTheDocument()
+  })
+
+  it('browse filters results by search query', () => {
+    render(<LibraryTab {...makeProps()} />)
+    fireEvent.click(screen.getByRole('button', { name: '浏览诗库' }))
+    fireEvent.change(screen.getByPlaceholderText('搜索诗库...'), { target: { value: '春晓' } })
+    expect(screen.queryByText('静夜思')).not.toBeInTheDocument()
+    expect(screen.getByText('春晓')).toBeInTheDocument()
+  })
+
+  it('browse excludes already-saved poems from results', () => {
+    render(<LibraryTab {...makeProps({ savedPoems: [savedPoem] })} />)
+    fireEvent.click(screen.getByRole('button', { name: '浏览诗库' }))
+    // savedPoem has id 'c1' (静夜思) — should not appear in browse results
+    const browseSection = screen.getByPlaceholderText('搜索诗库...').closest('div')!
+    expect(browseSection).not.toHaveTextContent('静夜思')
+    expect(browseSection).toHaveTextContent('春晓')
+  })
+
+  it('tapping a browse result opens PoemPreview', () => {
+    render(<LibraryTab {...makeProps()} />)
+    fireEvent.click(screen.getByRole('button', { name: '浏览诗库' }))
+    fireEvent.click(screen.getByRole('button', { name: /添加 静夜思/ }))
+    expect(screen.getByRole('button', { name: '确认添加' })).toBeInTheDocument()
+  })
+
+  it('browse shows no-results message when query matches nothing', () => {
+    render(<LibraryTab {...makeProps()} />)
+    fireEvent.click(screen.getByRole('button', { name: '浏览诗库' }))
+    fireEvent.change(screen.getByPlaceholderText('搜索诗库...'), { target: { value: 'zzz不存在' } })
+    expect(screen.getByText('未找到匹配的诗')).toBeInTheDocument()
   })
 })
