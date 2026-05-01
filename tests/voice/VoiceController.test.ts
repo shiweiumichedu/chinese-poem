@@ -139,11 +139,21 @@ describe('VoiceController', () => {
     expect(ctrl.state).toBe('idle')
   })
 
-  it('double startListening aborts old session', () => {
+  it('double startListening aborts old session before starting new one', () => {
+    const instances: MockSpeechRecognition[] = []
+    ;(window as any).SpeechRecognition = class extends MockSpeechRecognition {
+      constructor() {
+        super()
+        instances.push(this)
+      }
+    }
+
     const ctrl = createVoiceController()
     ctrl.startListening(vi.fn())
+    const first = instances[0]
     ctrl.startListening(vi.fn())
-    // Should still be listening (not crashed), only one active session
+
+    expect(first.abort).toHaveBeenCalledTimes(1)
     expect(ctrl.state).toBe('listening')
   })
 
