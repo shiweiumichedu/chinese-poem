@@ -9,6 +9,21 @@ export interface VoiceController {
   isTTSSupported(): boolean
 }
 
+// Preferred Mandarin voices in priority order (macOS, iOS, Edge neural)
+const ZH_VOICE_PRIORITY = ['Tingting', 'Ting-Ting', 'zh-CN-XiaoxiaoNeural', 'Meijia']
+
+function pickZhVoice(): SpeechSynthesisVoice | null {
+  const voices = window.speechSynthesis?.getVoices?.() ?? []
+  if (voices.length === 0) return null
+  for (const name of ZH_VOICE_PRIORITY) {
+    const v = voices.find(v => v.name === name || v.name.includes(name))
+    if (v) return v
+  }
+  return voices.find(v => v.lang === 'zh-CN' || v.lang === 'zh_CN')
+    ?? voices.find(v => v.lang.startsWith('zh'))
+    ?? null
+}
+
 export function createVoiceController(): VoiceController {
   let state: VoiceState = 'idle'
   let recognition: SpeechRecognition | null = null
@@ -77,6 +92,8 @@ export function createVoiceController(): VoiceController {
         const utterance = new SpeechSynthesisUtterance(lines[index])
         utterance.lang = 'zh-CN'
         utterance.rate = rate
+        const voice = pickZhVoice()
+        if (voice) utterance.voice = voice
         utterance.onstart = () => {
           if (generation === speakGeneration) onLineStart(index)
         }
