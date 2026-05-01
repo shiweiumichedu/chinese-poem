@@ -1,4 +1,5 @@
-import { addPoem, listPoems, findByTitle, removePoem } from '../../src/data/PoemLibrary'
+import { IDBFactory } from 'fake-indexeddb'
+import { savePoem, listPoems, findByTitle, removePoem, resetDBCache } from '../../src/data/PoemLibrary'
 import type { SavedPoem } from '../../src/types'
 
 const makePoem = (id: string, title: string, addedAt = Date.now()): SavedPoem => ({
@@ -12,25 +13,29 @@ const makePoem = (id: string, title: string, addedAt = Date.now()): SavedPoem =>
 })
 
 describe('PoemLibrary', () => {
+  beforeEach(() => {
+    globalThis.indexedDB = new IDBFactory()
+    resetDBCache()
+  })
   it('adds and lists a poem', async () => {
     const poem = makePoem('test-1', '静夜思', 1000)
-    await addPoem(poem)
+    await savePoem(poem)
     const list = await listPoems()
     expect(list.some(p => p.id === 'test-1')).toBe(true)
   })
 
   it('lists poems sorted by addedAt descending', async () => {
-    await addPoem(makePoem('sort-1', '春晓', 1000))
-    await addPoem(makePoem('sort-2', '登鹳雀楼', 2000))
+    await savePoem(makePoem('sort-1', '春晓', 1000))
+    await savePoem(makePoem('sort-2', '登鹳雀楼', 2000))
     const list = await listPoems()
-    const sortedIds = list.map(p => p.id)
-    const i1 = sortedIds.indexOf('sort-1')
-    const i2 = sortedIds.indexOf('sort-2')
-    expect(i2).toBeLessThan(i1)
+    expect(list.length).toBe(2)
+    const ids = list.map(p => p.id)
+    expect(ids[0]).toBe('sort-2')  // higher addedAt comes first
+    expect(ids[1]).toBe('sort-1')
   })
 
   it('finds a poem by exact title', async () => {
-    await addPoem(makePoem('find-1', '望庐山瀑布', 1000))
+    await savePoem(makePoem('find-1', '望庐山瀑布', 1000))
     const found = await findByTitle('望庐山瀑布')
     expect(found?.id).toBe('find-1')
   })
@@ -41,7 +46,7 @@ describe('PoemLibrary', () => {
   })
 
   it('removes a poem by id', async () => {
-    await addPoem(makePoem('remove-1', '枫桥夜泊', 1000))
+    await savePoem(makePoem('remove-1', '枫桥夜泊', 1000))
     await removePoem('remove-1')
     const list = await listPoems()
     expect(list.some(p => p.id === 'remove-1')).toBe(false)
@@ -49,9 +54,9 @@ describe('PoemLibrary', () => {
 
   it('put overwrites poem with same id', async () => {
     const original = makePoem('upsert-1', '原标题', 1000)
-    await addPoem(original)
+    await savePoem(original)
     const updated = { ...original, title: '新标题' }
-    await addPoem(updated)
+    await savePoem(updated)
     const found = await findByTitle('新标题')
     expect(found?.id).toBe('upsert-1')
     const old = await findByTitle('原标题')

@@ -1,21 +1,33 @@
-import { openDB } from 'idb'
+import { openDB, type IDBPDatabase } from 'idb'
 import type { SavedPoem } from '../types'
 
 const DB_NAME = 'poem-library'
 const STORE_NAME = 'poems'
 const DB_VERSION = 1
 
-function getDB() {
-  return openDB(DB_NAME, DB_VERSION, {
-    upgrade(db) {
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME, { keyPath: 'id' })
-      }
-    },
-  })
+let dbPromise: Promise<IDBPDatabase> | null = null
+
+export function resetDBCache(): void {
+  dbPromise = null
 }
 
-export async function addPoem(poem: SavedPoem): Promise<void> {
+function getDB(): Promise<IDBPDatabase> {
+  if (!dbPromise) {
+    dbPromise = openDB(DB_NAME, DB_VERSION, {
+      upgrade(db) {
+        if (!db.objectStoreNames.contains(STORE_NAME)) {
+          db.createObjectStore(STORE_NAME, { keyPath: 'id' })
+        }
+      },
+      terminated() {
+        dbPromise = null
+      },
+    })
+  }
+  return dbPromise
+}
+
+export async function savePoem(poem: SavedPoem): Promise<void> {
   const db = await getDB()
   await db.put(STORE_NAME, poem)
 }
