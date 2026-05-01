@@ -180,4 +180,40 @@ describe('VoiceController', () => {
     // onDone1 should NOT be called (its generation was superseded)
     expect(onDone1).not.toHaveBeenCalled()
   })
+
+  it('speakLines sets utterance.rate from the rate parameter', () => {
+    type MockUtt = {
+      text: string; lang: string; rate: number
+      onstart: (() => void) | null; onend: (() => void) | null; onerror: (() => void) | null
+    }
+    const utts: MockUtt[] = []
+    setWindowProp('SpeechSynthesisUtterance', class {
+      text: string; lang = ''; rate = 1.0
+      onstart: (() => void) | null = null
+      onend: (() => void) | null = null
+      onerror: (() => void) | null = null
+      constructor(t: string) { this.text = t; utts.push(this) }
+    })
+    const ctrl = createVoiceController()
+    ctrl.speakLines(['床前明月光'], vi.fn(), vi.fn(), 0.7)
+    expect(utts[0].rate).toBe(0.7)
+  })
+
+  it('speakLines defaults utterance.rate to 1.0 when rate omitted', () => {
+    type MockUtt = {
+      text: string; lang: string; rate: number
+      onstart: (() => void) | null; onend: (() => void) | null; onerror: (() => void) | null
+    }
+    const utts: MockUtt[] = []
+    setWindowProp('SpeechSynthesisUtterance', class {
+      text: string; lang = ''; rate = 1.0
+      onstart: (() => void) | null = null
+      onend: (() => void) | null = null
+      onerror: (() => void) | null = null
+      constructor(t: string) { this.text = t; utts.push(this) }
+    })
+    const ctrl = createVoiceController()
+    ctrl.speakLines(['床前明月光'], vi.fn(), vi.fn())
+    expect(utts[0].rate).toBe(1.0)
+  })
 })

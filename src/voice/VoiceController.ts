@@ -3,7 +3,7 @@ import type { VoiceState } from '../types'
 export interface VoiceController {
   state: VoiceState
   startListening(onResult: (text: string) => void, onIdle?: () => void): void
-  speakLines(lines: string[], onLineStart: (index: number) => void, onDone: () => void): void
+  speakLines(lines: string[], onLineStart: (index: number) => void, onDone: () => void, rate?: number): void
   stop(): void
   isSTTSupported(): boolean
   isTTSSupported(): boolean
@@ -56,7 +56,7 @@ export function createVoiceController(): VoiceController {
       }
     },
 
-    speakLines(lines, onLineStart, onDone) {
+    speakLines(lines, onLineStart, onDone, rate = 1.0) {
       if (!window.speechSynthesis || lines.length === 0) {
         onDone()
         return
@@ -76,6 +76,7 @@ export function createVoiceController(): VoiceController {
         }
         const utterance = new SpeechSynthesisUtterance(lines[index])
         utterance.lang = 'zh-CN'
+        utterance.rate = rate
         utterance.onstart = () => {
           if (generation === speakGeneration) onLineStart(index)
         }
