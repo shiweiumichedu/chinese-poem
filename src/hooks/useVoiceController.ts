@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from 'react'
+import { useRef, useState, useCallback, useEffect } from 'react'
 import { createVoiceController } from '../voice/VoiceController'
 import type { VoiceController } from '../voice/VoiceController'
 import type { VoiceState } from '../types'
@@ -13,6 +13,7 @@ export function useVoiceController() {
     return stored ? parseFloat(stored) : 1.0
   })
   const ttsRateRef = useRef(ttsRate)
+  useEffect(() => { ttsRateRef.current = ttsRate }, [ttsRate])
 
   const getController = useCallback((): VoiceController => {
     if (!controllerRef.current) {
