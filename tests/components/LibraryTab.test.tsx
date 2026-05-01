@@ -1,5 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { act } from 'react'
+import userEvent from '@testing-library/user-event'
 import { LibraryTab } from '../../src/components/LibraryTab'
 import { savePoem } from '../../src/data/PoemLibrary'
 import type { CorpusPoem, SavedPoem, VoiceState } from '../../src/types'
@@ -39,6 +40,7 @@ function makeProps(overrides = {}) {
     isSTTSupported: true,
     corpus: [corpusPoem, corpusPoem2],
     corpusLoading: false,
+    corpusError: null,
     savedPoems: [],
     onPoemSelect: vi.fn(),
     onPoemAdded: vi.fn(),
@@ -230,5 +232,11 @@ describe('LibraryTab', () => {
     fireEvent.click(screen.getByRole('button', { name: '浏览诗库' }))
     fireEvent.change(screen.getByPlaceholderText('搜索诗库...'), { target: { value: 'zzz不存在' } })
     expect(screen.getByText('未找到匹配的诗')).toBeInTheDocument()
+  })
+
+  it('shows corpus error message in browse tab when corpus failed', async () => {
+    render(<LibraryTab {...makeProps()} corpusError="failed to load" />)
+    await userEvent.click(screen.getByRole('button', { name: '浏览诗库' }))
+    expect(screen.getByText('诗库加载失败')).toBeInTheDocument()
   })
 })

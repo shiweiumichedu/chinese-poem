@@ -13,6 +13,7 @@ interface LibraryTabProps {
   isSTTSupported: boolean
   corpus: CorpusPoem[]
   corpusLoading: boolean
+  corpusError: string | null
   savedPoems: SavedPoem[]
   onPoemSelect: (poem: SavedPoem) => void
   onPoemAdded: () => Promise<void>
@@ -28,6 +29,7 @@ export function LibraryTab({
   isSTTSupported,
   corpus,
   corpusLoading,
+  corpusError,
   savedPoems,
   onPoemSelect,
   onPoemAdded,
@@ -180,6 +182,8 @@ export function LibraryTab({
           />
           {corpusLoading ? (
             <p className="corpus-loading">正在加载诗库...</p>
+          ) : corpusError ? (
+            <p className="corpus-error-browse">诗库加载失败</p>
           ) : (
             <div className="browse-results">
               {browseResults.map((poem) => (

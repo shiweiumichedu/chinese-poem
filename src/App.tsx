@@ -58,6 +58,7 @@ function App() {
             {...voiceProps}
             corpus={corpus}
             corpusLoading={corpusLoading}
+            corpusError={corpusError}
             savedPoems={libraryPoems}
             onPoemSelect={handlePoemSelect}
             onPoemAdded={handlePoemAdded}
