@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import type { SavedPoem } from '../types'
 
+const DYNASTY_LABEL: Record<'tang' | 'song', string> = { tang: '唐', song: '宋' }
+
 interface PoemPlayerProps {
   poem: SavedPoem
   onPlay: (
@@ -32,7 +34,7 @@ export function PoemPlayer({ poem, onPlay, onStop, isPlaying }: PoemPlayerProps)
   return (
     <div className="poem-player">
       <h2 className="poem-title">{poem.title}</h2>
-      <p className="poem-author">{poem.author} · {poem.dynasty === 'tang' ? '唐' : '宋'}</p>
+      <p className="poem-author">{poem.author} · {DYNASTY_LABEL[poem.dynasty] ?? poem.dynasty}</p>
       <div className="poem-lines">
         {poem.lines.map((line, i) => (
           <p

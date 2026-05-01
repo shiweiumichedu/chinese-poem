@@ -84,4 +84,47 @@ describe('PoemPlayer', () => {
     render(<PoemPlayer poem={noBackground} onPlay={vi.fn()} onStop={vi.fn()} isPlaying={false} />)
     expect(screen.queryByText('唐代伟大诗人')).not.toBeInTheDocument()
   })
+
+  it('clears highlight when 停止 is clicked', () => {
+    const onPlay = vi.fn()
+    const { rerender } = render(
+      <PoemPlayer poem={poem} onPlay={onPlay} onStop={vi.fn()} isPlaying={false} />
+    )
+    // Start playback and highlight line 2
+    fireEvent.click(screen.getByRole('button', { name: '朗读' }))
+    const [, onLineStart] = onPlay.mock.calls[0]
+    act(() => { onLineStart(2) })
+
+    // Switch to playing state and click stop
+    rerender(<PoemPlayer poem={poem} onPlay={onPlay} onStop={vi.fn()} isPlaying={true} />)
+    fireEvent.click(screen.getByRole('button', { name: '停止' }))
+
+    // No line should be highlighted
+    const lines = document.querySelectorAll('.poem-line')
+    lines.forEach(line => {
+      expect(line.className).not.toContain('highlighted')
+    })
+  })
+
+  it('clears highlight when playback completes (onDone)', () => {
+    const onPlay = vi.fn()
+    render(<PoemPlayer poem={poem} onPlay={onPlay} onStop={vi.fn()} isPlaying={false} />)
+
+    // Start playback and highlight line 0
+    fireEvent.click(screen.getByRole('button', { name: '朗读' }))
+    const [, onLineStart, onDone] = onPlay.mock.calls[0]
+    act(() => { onLineStart(0) })
+
+    // Verify line 0 is highlighted
+    const lines = document.querySelectorAll('.poem-line')
+    expect(lines[0].className).toContain('highlighted')
+
+    // Simulate playback completion
+    act(() => { onDone() })
+
+    // No line should be highlighted
+    lines.forEach(line => {
+      expect(line.className).not.toContain('highlighted')
+    })
+  })
 })
