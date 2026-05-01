@@ -61,4 +61,14 @@ describe('searchPoems', () => {
     const results = searchPoems(corpus, '庐山')
     expect(results[0].id).toBe('4')
   })
+
+  it('normalizes curly Unicode quotes in title', () => {
+    const c = [makePoem('q', '靈隐寺"')]
+    expect(searchPoems(c, '靈隐寺')[0].id).toBe('q')
+  })
+
+  it('strips bracket annotations in corpus titles', () => {
+    const c = [makePoem('b', '奉和麟德殿宴百僚應[制]')]
+    expect(searchPoems(c, '奉和麟德殿宴百僚應制')[0].id).toBe('b')
+  })
 })

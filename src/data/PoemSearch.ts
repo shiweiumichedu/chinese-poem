@@ -1,6 +1,6 @@
 import type { CorpusPoem } from '../types'
 
-const PUNCTUATION = /[\s，。！？、；：""''【】《》（）…—～]/g
+const PUNCTUATION = /[\s，。！？、；：“”‘’【】《》（）…—～\[\]{}<>]/g
 
 function normalize(str: string): string {
   return str.replace(PUNCTUATION, '').toLowerCase()
