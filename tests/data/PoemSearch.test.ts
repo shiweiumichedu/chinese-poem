@@ -63,7 +63,7 @@ describe('searchPoems', () => {
   })
 
   it('normalizes curly Unicode quotes in title', () => {
-    const c = [makePoem('q', '靈隐寺"')]
+    const c = [makePoem('q', '靈隐寺“')]  // 靈隐寺“ uses U+201C left curly quote
     expect(searchPoems(c, '靈隐寺')[0].id).toBe('q')
   })
 
