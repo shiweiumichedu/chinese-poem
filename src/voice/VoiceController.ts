@@ -15,13 +15,13 @@ const ZH_VOICE_PRIORITY = ['Tingting', 'Ting-Ting', 'zh-CN-XiaoxiaoNeural', 'Mei
 function pickZhVoice(): SpeechSynthesisVoice | null {
   const voices = window.speechSynthesis?.getVoices?.() ?? []
   if (voices.length === 0) return null
+  // Only override the browser default when a known high-quality voice is present.
+  // Falling through to generic zh-CN can select remote/cloud voices that fail silently.
   for (const name of ZH_VOICE_PRIORITY) {
     const v = voices.find(v => v.name === name || v.name.includes(name))
     if (v) return v
   }
-  return voices.find(v => v.lang === 'zh-CN' || v.lang === 'zh_CN')
-    ?? voices.find(v => v.lang.startsWith('zh'))
-    ?? null
+  return null
 }
 
 export function createVoiceController(): VoiceController {
