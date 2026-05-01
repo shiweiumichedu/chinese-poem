@@ -3,9 +3,16 @@ import { createVoiceController } from '../voice/VoiceController'
 import type { VoiceController } from '../voice/VoiceController'
 import type { VoiceState } from '../types'
 
+const RATE_KEY = 'tts-rate'
+
 export function useVoiceController() {
   const controllerRef = useRef<VoiceController | null>(null)
   const [voiceState, setVoiceState] = useState<VoiceState>('idle')
+  const [ttsRate, setTtsRateState] = useState<number>(() => {
+    const stored = localStorage.getItem(RATE_KEY)
+    return stored ? parseFloat(stored) : 1.0
+  })
+  const ttsRateRef = useRef(ttsRate)
 
   const getController = useCallback((): VoiceController => {
     if (!controllerRef.current) {
@@ -14,13 +21,19 @@ export function useVoiceController() {
     return controllerRef.current
   }, [])
 
+  const setTtsRate = useCallback((rate: number) => {
+    localStorage.setItem(RATE_KEY, String(rate))
+    ttsRateRef.current = rate
+    setTtsRateState(rate)
+  }, [])
+
   const startListening = useCallback((onResult: (text: string) => void) => {
     const ctrl = getController()
     ctrl.startListening(
       (text) => { setVoiceState('idle'); onResult(text) },
       () => setVoiceState('idle')
     )
-    setVoiceState(ctrl.state)  // reflects actual state (may still be 'idle' if unsupported)
+    setVoiceState(ctrl.state)
   }, [getController])
 
   const speakLines = useCallback((
@@ -32,8 +45,8 @@ export function useVoiceController() {
     ctrl.speakLines(lines, onLineStart, () => {
       setVoiceState('idle')
       onDone()
-    })
-    setVoiceState(ctrl.state)  // 'speaking' or 'idle' if lines was empty
+    }, ttsRateRef.current)
+    setVoiceState(ctrl.state)
   }, [getController])
 
   const stop = useCallback(() => {
@@ -48,5 +61,7 @@ export function useVoiceController() {
     stop,
     isSTTSupported: () => getController().isSTTSupported(),
     isTTSSupported: () => getController().isTTSSupported(),
+    ttsRate,
+    setTtsRate,
   }
 }
