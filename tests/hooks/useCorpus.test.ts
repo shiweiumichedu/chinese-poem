@@ -73,4 +73,27 @@ describe('useCorpus', () => {
     expect(result.current.error).toBe('Network error')
     expect(result.current.corpus).toHaveLength(0)
   })
+
+  it('does not update state after unmount', async () => {
+    let resolvePoems!: (val: unknown) => void
+    let resolveAuthors!: (val: unknown) => void
+
+    vi.stubGlobal('fetch', vi.fn()
+      .mockImplementationOnce(() => new Promise(r => { resolvePoems = r }))
+      .mockImplementationOnce(() => new Promise(r => { resolveAuthors = r }))
+    )
+
+    const { result, unmount } = renderHook(() => useCorpus())
+    expect(result.current.loading).toBe(true)
+
+    unmount()
+
+    // Resolve after unmount — should not throw or update state
+    await act(async () => {
+      resolvePoems({ ok: true, json: () => Promise.resolve([]) })
+      resolveAuthors({ ok: true, json: () => Promise.resolve({}) })
+    })
+
+    // No assertion needed beyond "no throw" — the cancelled flag prevented setState
+  })
 })

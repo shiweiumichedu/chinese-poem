@@ -11,7 +11,7 @@ function App() {
   const [libraryPoems, setLibraryPoems] = useState<SavedPoem[]>([])
   const [selectedPoem, setSelectedPoem] = useState<SavedPoem | undefined>(undefined)
 
-  const { corpus, loading: corpusLoading } = useCorpus()
+  const { corpus, loading: corpusLoading, error: corpusError } = useCorpus()
   const { voiceState, startListening, speakLines, stop, isSTTSupported } = useVoiceController()
 
   useEffect(() => {
@@ -39,6 +39,11 @@ function App() {
   return (
     <div className="app">
       <main className="app-content">
+        {corpusError && (
+          <div className="corpus-error">
+            诗库加载失败，仅可朗读已收藏的诗词
+          </div>
+        )}
         {activeTab === 'listen' ? (
           <ListenTab
             {...voiceProps}
