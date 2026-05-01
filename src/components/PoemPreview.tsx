@@ -1,6 +1,6 @@
 import type { CorpusPoem } from '../types'
+import { DYNASTY_LABEL } from '../constants'
 
-const DYNASTY_LABEL: Record<'tang' | 'song', string> = { tang: '唐', song: '宋' }
 const PREVIEW_LINE_COUNT = 4
 
 interface PoemPreviewProps {

@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import type { SavedPoem } from '../types'
-
-const DYNASTY_LABEL: Record<'tang' | 'song', string> = { tang: '唐', song: '宋' }
+import { DYNASTY_LABEL } from '../constants'
 
 interface PoemPlayerProps {
   poem: SavedPoem
