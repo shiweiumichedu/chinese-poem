@@ -9,18 +9,6 @@ export interface VoiceController {
   isTTSSupported(): boolean
 }
 
-// macOS system voices, preferred in order. Only local voices — never remote Google voices.
-const PREFERRED_ZH_VOICES = ['Tingting', 'Meijia', 'Ting-Ting']
-
-function pickZhVoice(): SpeechSynthesisVoice | null {
-  const voices = window.speechSynthesis?.getVoices?.() ?? []
-  for (const name of PREFERRED_ZH_VOICES) {
-    const v = voices.find(v => v.name === name)
-    if (v) return v
-  }
-  return null
-}
-
 export function createVoiceController(): VoiceController {
   let state: VoiceState = 'idle'
   let recognition: SpeechRecognition | null = null
@@ -89,8 +77,6 @@ export function createVoiceController(): VoiceController {
         const utterance = new SpeechSynthesisUtterance(lines[index])
         utterance.lang = 'zh-CN'
         utterance.rate = rate
-        const voice = pickZhVoice()
-        if (voice) utterance.voice = voice
         utterance.onstart = () => {
           if (generation === speakGeneration) onLineStart(index)
         }
