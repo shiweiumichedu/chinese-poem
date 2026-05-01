@@ -2,7 +2,7 @@ import type { VoiceState } from '../types'
 
 export interface VoiceController {
   state: VoiceState
-  startListening(onResult: (text: string) => void): void
+  startListening(onResult: (text: string) => void, onIdle?: () => void): void
   speakLines(lines: string[], onLineStart: (index: number) => void, onDone: () => void): void
   stop(): void
   isSTTSupported(): boolean
@@ -29,7 +29,7 @@ export function createVoiceController(): VoiceController {
       return typeof window.speechSynthesis !== 'undefined'
     },
 
-    startListening(onResult) {
+    startListening(onResult, onIdle?) {
       if (!SpeechRecognitionClass) return
       // Abort any existing session before starting a new one
       if (recognition) {
@@ -46,8 +46,8 @@ export function createVoiceController(): VoiceController {
         state = 'idle'
         onResult(text)
       }
-      recognition.onerror = () => { state = 'idle' }
-      recognition.onend = () => { if (state === 'listening') state = 'idle' }
+      recognition.onerror = () => { state = 'idle'; onIdle?.() }
+      recognition.onend = () => { if (state === 'listening') { state = 'idle'; onIdle?.() } }
       try {
         recognition.start()
       } catch {

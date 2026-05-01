@@ -16,20 +16,25 @@ class MockSpeechRecognition {
 const mockSpeak = vi.fn()
 const mockCancel = vi.fn()
 
+// Typed helper to set window properties in tests without `any`
+function setWindowProp<K extends string>(key: K, value: unknown) {
+  (window as unknown as Record<string, unknown>)[key] = value
+}
+function deleteWindowProp<K extends string>(key: K) {
+  delete (window as unknown as Record<string, unknown>)[key]
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
   // Install mocks on window
-  ;(window as any).SpeechRecognition = MockSpeechRecognition
-  ;(window as any).webkitSpeechRecognition = undefined
-  ;(window as any).speechSynthesis = {
-    speak: mockSpeak,
-    cancel: mockCancel,
-  }
+  setWindowProp('SpeechRecognition', MockSpeechRecognition)
+  setWindowProp('webkitSpeechRecognition', undefined)
+  setWindowProp('speechSynthesis', { speak: mockSpeak, cancel: mockCancel })
 })
 
 afterEach(() => {
-  delete (window as any).SpeechRecognition
-  delete (window as any).speechSynthesis
+  deleteWindowProp('SpeechRecognition')
+  deleteWindowProp('speechSynthesis')
 })
 
 describe('VoiceController', () => {
@@ -44,7 +49,7 @@ describe('VoiceController', () => {
   })
 
   it('isSTTSupported returns false when SpeechRecognition missing', () => {
-    delete (window as any).SpeechRecognition
+    deleteWindowProp('SpeechRecognition')
     const ctrl = createVoiceController()
     expect(ctrl.isSTTSupported()).toBe(false)
   })
@@ -62,12 +67,13 @@ describe('VoiceController', () => {
 
   it('onresult callback delivers transcript and resets state', () => {
     let instance: MockSpeechRecognition | null = null
-    ;(window as any).SpeechRecognition = class extends MockSpeechRecognition {
+    setWindowProp('SpeechRecognition', class extends MockSpeechRecognition {
       constructor() {
         super()
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
         instance = this
       }
-    }
+    })
     const onResult = vi.fn()
     const ctrl2 = createVoiceController()
     ctrl2.startListening(onResult)
@@ -94,7 +100,7 @@ describe('VoiceController', () => {
     const lines = ['床前明月光', '疑是地上霜']
 
     // Mock SpeechSynthesisUtterance
-    ;(window as any).SpeechSynthesisUtterance = class {
+    setWindowProp('SpeechSynthesisUtterance', class {
       text: string
       lang = ''
       onstart: (() => void) | null = null
@@ -103,7 +109,7 @@ describe('VoiceController', () => {
       constructor(text: string) {
         this.text = text
       }
-    }
+    })
     // speak() does NOT auto-trigger onend — we verify synchronous behaviour only
     const onLineStart = vi.fn()
     ctrl.speakLines(lines, onLineStart, vi.fn())
@@ -113,12 +119,13 @@ describe('VoiceController', () => {
   })
 
   it('speakLines chains utterances sequentially and fires onLineStart per line', () => {
-    const utts: any[] = []
-    ;(window as any).SpeechSynthesisUtterance = class {
+    type MockUtt = { text: string; lang: string; onstart: (() => void) | null; onend: (() => void) | null; onerror: (() => void) | null }
+    const utts: MockUtt[] = []
+    setWindowProp('SpeechSynthesisUtterance', class {
       text: string; lang = ''; onstart: (() => void) | null = null
       onend: (() => void) | null = null; onerror: (() => void) | null = null
       constructor(t: string) { this.text = t; utts.push(this) }
-    }
+    })
     const onLineStart = vi.fn()
     const onDone = vi.fn()
     const ctrl = createVoiceController()
@@ -126,27 +133,27 @@ describe('VoiceController', () => {
     ctrl.speakLines(['床前明月光', '疑是地上霜'], onLineStart, onDone)
 
     expect(mockSpeak).toHaveBeenCalledTimes(1)
-    utts[0].onstart()
+    utts[0].onstart!()
     expect(onLineStart).toHaveBeenCalledWith(0)
 
-    utts[0].onend()
+    utts[0].onend!()
     expect(mockSpeak).toHaveBeenCalledTimes(2)
-    utts[1].onstart()
+    utts[1].onstart!()
     expect(onLineStart).toHaveBeenCalledWith(1)
 
-    utts[1].onend()
+    utts[1].onend!()
     expect(onDone).toHaveBeenCalledTimes(1)
     expect(ctrl.state).toBe('idle')
   })
 
   it('double startListening aborts old session before starting new one', () => {
     const instances: MockSpeechRecognition[] = []
-    ;(window as any).SpeechRecognition = class extends MockSpeechRecognition {
+    setWindowProp('SpeechRecognition', class extends MockSpeechRecognition {
       constructor() {
         super()
         instances.push(this)
       }
-    }
+    })
 
     const ctrl = createVoiceController()
     ctrl.startListening(vi.fn())
@@ -158,10 +165,10 @@ describe('VoiceController', () => {
   })
 
   it('speakLines called while speaking does not call old onDone', () => {
-    ;(window as any).SpeechSynthesisUtterance = class {
-      text = ''; lang = ''; onstart = null; onend = null; onerror: ((e: any) => void) | null = null
+    setWindowProp('SpeechSynthesisUtterance', class {
+      text = ''; lang = ''; onstart = null; onend = null; onerror: ((e: SpeechSynthesisErrorEvent) => void) | null = null
       constructor(t: string) { this.text = t }
-    }
+    })
     const onDone1 = vi.fn()
     const onDone2 = vi.fn()
     const ctrl = createVoiceController()

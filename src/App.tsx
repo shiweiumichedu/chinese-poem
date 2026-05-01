@@ -71,7 +71,7 @@ function App() {
         </button>
         <button
           className={`tab-button${activeTab === 'library' ? ' active' : ''}`}
-          onClick={() => setActiveTab('library')}
+          onClick={() => { stop(); setActiveTab('library') }}
         >
           📚 诗库
         </button>

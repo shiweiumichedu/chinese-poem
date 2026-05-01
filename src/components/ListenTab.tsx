@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import type { SavedPoem, VoiceState } from '../types'
 import { searchPoems } from '../data/PoemSearch'
-import { DYNASTY_LABEL } from '../constants'
+import { PoemPlayer } from './PoemPlayer'
 
 interface ListenTabProps {
   voiceState: VoiceState
@@ -39,6 +39,11 @@ export function ListenTab({
       )
     }
   }, [initialPoem, speakLines])
+
+  useEffect(() => {
+    return () => stop()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const statusText = voiceState === 'listening'
     ? '正在听...'
@@ -119,20 +124,13 @@ export function ListenTab({
       )}
 
       {currentPoem && (
-        <div className="poem-display">
-          <h2 className="poem-title">{currentPoem.title}</h2>
-          <p className="poem-author">{currentPoem.author} · {DYNASTY_LABEL[currentPoem.dynasty] ?? currentPoem.dynasty}</p>
-          <div className="poem-lines">
-            {currentPoem.lines.map((line, i) => (
-              <p
-                key={i}
-                className={`poem-line${i === highlightedLine ? ' highlighted' : ''}`}
-              >
-                {line}
-              </p>
-            ))}
-          </div>
-        </div>
+        <PoemPlayer
+          poem={currentPoem}
+          onPlay={(lines, onLineStart, onDone) => speakLines(lines, onLineStart, onDone)}
+          onStop={stop}
+          isPlaying={voiceState === 'speaking'}
+          highlightedLine={highlightedLine}
+        />
       )}
     </div>
   )

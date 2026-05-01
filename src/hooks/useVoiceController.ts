@@ -16,10 +16,10 @@ export function useVoiceController() {
 
   const startListening = useCallback((onResult: (text: string) => void) => {
     const ctrl = getController()
-    ctrl.startListening((text) => {
-      setVoiceState('idle')
-      onResult(text)
-    })
+    ctrl.startListening(
+      (text) => { setVoiceState('idle'); onResult(text) },
+      () => setVoiceState('idle')
+    )
     setVoiceState(ctrl.state)  // reflects actual state (may still be 'idle' if unsupported)
   }, [getController])
 

@@ -107,7 +107,7 @@ describe('ListenTab', () => {
     let capturedOnResult: ((text: string) => void) | null = null
     let capturedOnLineStart: ((i: number) => void) | null = null
     const startListening = vi.fn((onResult) => { capturedOnResult = onResult })
-    const speakLines = vi.fn((_, onLineStart, _onDone) => { capturedOnLineStart = onLineStart })
+    const speakLines = vi.fn((_, onLineStart) => { capturedOnLineStart = onLineStart })
     const props = makeProps({ startListening, speakLines, libraryPoems: [poem] })
 
     const { container } = render(<ListenTab {...props} />)

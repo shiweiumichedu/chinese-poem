@@ -11,22 +11,26 @@ interface PoemPlayerProps {
   ) => void
   onStop: () => void
   isPlaying: boolean  // controlled from parent (voiceState === 'speaking')
+  highlightedLine?: number | null  // external override when auto-played
 }
 
-export function PoemPlayer({ poem, onPlay, onStop, isPlaying }: PoemPlayerProps) {
-  const [highlightedLine, setHighlightedLine] = useState<number | null>(null)
+export function PoemPlayer({ poem, onPlay, onStop, isPlaying, highlightedLine }: PoemPlayerProps) {
+  const [internalHighlight, setInternalHighlight] = useState<number | null>(null)
+
+  // Use external highlight when provided (auto-play from parent), else use internal
+  const displayHighlight = highlightedLine !== undefined ? highlightedLine : internalHighlight
 
   function handlePlay() {
-    setHighlightedLine(null)
+    setInternalHighlight(null)
     onPlay(
       poem.lines,
-      (index) => setHighlightedLine(index),
-      () => setHighlightedLine(null)
+      (index) => setInternalHighlight(index),
+      () => setInternalHighlight(null)
     )
   }
 
   function handleStop() {
-    setHighlightedLine(null)
+    setInternalHighlight(null)
     onStop()
   }
 
@@ -38,7 +42,7 @@ export function PoemPlayer({ poem, onPlay, onStop, isPlaying }: PoemPlayerProps)
         {poem.lines.map((line, i) => (
           <p
             key={i}
-            className={`poem-line${i === highlightedLine ? ' highlighted' : ''}`}
+            className={`poem-line${i === displayHighlight ? ' highlighted' : ''}`}
           >
             {line}
           </p>
