@@ -24,12 +24,11 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: /诗库/ })).toBeInTheDocument()
   })
 
-  it('default tab is listen — shows text input fallback (STT unsupported in jsdom)', async () => {
-    render(<App />)
-    // STT is not supported in jsdom, so we get text input fallback
-    await waitFor(() => {
-      expect(screen.getByPlaceholderText('输入诗名...')).toBeInTheDocument()
-    })
+  it('default tab is listen — shows listen-tab container, not library-tab', async () => {
+    const { container } = render(<App />)
+    // Check that the listen tab container is present (LibraryTab has 'library-tab', ListenTab has 'listen-tab')
+    expect(container.querySelector('.listen-tab')).not.toBeNull()
+    expect(container.querySelector('.library-tab')).toBeNull()
   })
 
   it('clicking 诗库 tab switches to library tab showing empty library message', async () => {

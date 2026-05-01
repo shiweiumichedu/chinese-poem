@@ -17,12 +17,16 @@ export function useCorpus(): UseCorpusResult {
 
     async function load() {
       try {
-        const [poemsRes, authorsRes] = await Promise.all([
-          fetch('/corpus.json'),
-          fetch('/authors.json'),
+        const [rawPoems, authors] = await Promise.all([
+          fetch('/corpus.json').then(r => {
+            if (!r.ok) throw new Error(`Failed to fetch corpus: ${r.status}`)
+            return r.json() as Promise<CorpusPoem[]>
+          }),
+          fetch('/authors.json').then(r => {
+            if (!r.ok) throw new Error(`Failed to fetch authors: ${r.status}`)
+            return r.json() as Promise<Record<string, string>>
+          }),
         ])
-        const rawPoems: CorpusPoem[] = await poemsRes.json()
-        const authors: Record<string, string> = await authorsRes.json()
 
         if (cancelled) return
 

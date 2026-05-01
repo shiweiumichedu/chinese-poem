@@ -15,7 +15,7 @@ interface LibraryTabProps {
   corpusLoading: boolean
   savedPoems: SavedPoem[]
   onPoemSelect: (poem: SavedPoem) => void
-  onPoemAdded: () => void
+  onPoemAdded: () => Promise<void>
 }
 
 export function LibraryTab({
@@ -72,7 +72,8 @@ export function LibraryTab({
     if (!preview) return
     await savePoem({ ...preview, addedAt: Date.now() })
     setPreview(null)
-    onPoemAdded()
+    setAddTextQuery('')
+    await onPoemAdded()
   }
 
   function handleCancel() {
@@ -96,6 +97,7 @@ export function LibraryTab({
             <button
               key={poem.id}
               className="poem-list-item"
+              aria-label={`${poem.title} ${poem.author}`}
               onClick={() => onPoemSelect(poem)}
             >
               <span className="poem-list-title">{poem.title}</span>
@@ -116,7 +118,7 @@ export function LibraryTab({
             disabled={voiceState !== 'idle'}
             onClick={handleAddByVoice}
           >
-            ＋ 添加新诗 🎤
+            ＋ 添加新诗 <span aria-hidden="true">🎤</span>
           </button>
         ) : (
           <div className="add-text-section">

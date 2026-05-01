@@ -74,6 +74,25 @@ describe('useCorpus', () => {
     expect(result.current.corpus).toHaveLength(0)
   })
 
+  it('sets error when corpus fetch returns non-ok status', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((url: string) => {
+        if (url.includes('corpus')) {
+          return Promise.resolve({ ok: false, status: 404, json: () => Promise.resolve(null) })
+        }
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(authors) })
+      })
+    )
+
+    const { result } = renderHook(() => useCorpus())
+
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    expect(result.current.error).toBe('Failed to fetch corpus: 404')
+    expect(result.current.corpus).toHaveLength(0)
+  })
+
   it('does not update state after unmount', async () => {
     let resolvePoems!: (val: unknown) => void
     let resolveAuthors!: (val: unknown) => void

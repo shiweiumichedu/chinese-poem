@@ -13,6 +13,7 @@ function App() {
 
   const { corpus, loading: corpusLoading, error: corpusError } = useCorpus()
   const { voiceState, startListening, speakLines, stop, isSTTSupported } = useVoiceController()
+  const sttSupported = isSTTSupported()
 
   useEffect(() => {
     listPoems().then(setLibraryPoems)
@@ -33,7 +34,7 @@ function App() {
     startListening,
     speakLines,
     stop,
-    isSTTSupported: isSTTSupported(),
+    isSTTSupported: sttSupported,
   }
 
   return (
