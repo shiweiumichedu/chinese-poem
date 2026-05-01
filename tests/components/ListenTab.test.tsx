@@ -171,4 +171,22 @@ describe('ListenTab', () => {
       expect.any(Function)
     )
   })
+
+  it('triggers search via Enter key in text input fallback', () => {
+    const speakLines = vi.fn()
+    const props = makeProps({ isSTTSupported: false, speakLines, libraryPoems: [poem] })
+
+    render(<ListenTab {...props} />)
+    const input = screen.getByPlaceholderText('输入诗名...')
+    fireEvent.change(input, { target: { value: '静夜思' } })
+    fireEvent.keyDown(input, { key: 'Enter' })
+
+    expect(screen.getAllByText('静夜思').length).toBeGreaterThan(0)
+    expect(screen.getByText('床前明月光')).toBeInTheDocument()
+    expect(speakLines).toHaveBeenCalledWith(
+      poem.lines,
+      expect.any(Function),
+      expect.any(Function)
+    )
+  })
 })
