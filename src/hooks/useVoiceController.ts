@@ -7,12 +7,12 @@ export function useVoiceController() {
   const controllerRef = useRef<VoiceController | null>(null)
   const [voiceState, setVoiceState] = useState<VoiceState>('idle')
 
-  function getController(): VoiceController {
+  const getController = useCallback((): VoiceController => {
     if (!controllerRef.current) {
       controllerRef.current = createVoiceController()
     }
     return controllerRef.current
-  }
+  }, [])
 
   const startListening = useCallback((onResult: (text: string) => void) => {
     const ctrl = getController()
@@ -20,8 +20,8 @@ export function useVoiceController() {
       setVoiceState('idle')
       onResult(text)
     })
-    setVoiceState('listening')
-  }, [])
+    setVoiceState(ctrl.state)  // reflects actual state (may still be 'idle' if unsupported)
+  }, [getController])
 
   const speakLines = useCallback((
     lines: string[],
@@ -29,17 +29,17 @@ export function useVoiceController() {
     onDone: () => void
   ) => {
     const ctrl = getController()
-    setVoiceState('speaking')
     ctrl.speakLines(lines, onLineStart, () => {
       setVoiceState('idle')
       onDone()
     })
-  }, [])
+    setVoiceState(ctrl.state)  // 'speaking' or 'idle' if lines was empty
+  }, [getController])
 
   const stop = useCallback(() => {
     getController().stop()
     setVoiceState('idle')
-  }, [])
+  }, [getController])
 
   return {
     voiceState,

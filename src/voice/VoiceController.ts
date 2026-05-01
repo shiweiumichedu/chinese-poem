@@ -12,6 +12,7 @@ export interface VoiceController {
 export function createVoiceController(): VoiceController {
   let state: VoiceState = 'idle'
   let recognition: SpeechRecognition | null = null
+  let speakGeneration = 0
 
   const SpeechRecognitionClass =
     (window.SpeechRecognition as typeof SpeechRecognition | undefined) ??
@@ -30,6 +31,11 @@ export function createVoiceController(): VoiceController {
 
     startListening(onResult) {
       if (!SpeechRecognitionClass) return
+      // Abort any existing session before starting a new one
+      if (recognition) {
+        recognition.abort()
+        recognition = null
+      }
       state = 'listening'
       recognition = new SpeechRecognitionClass()
       recognition.lang = 'zh-CN'
@@ -42,7 +48,12 @@ export function createVoiceController(): VoiceController {
       }
       recognition.onerror = () => { state = 'idle' }
       recognition.onend = () => { if (state === 'listening') state = 'idle' }
-      recognition.start()
+      try {
+        recognition.start()
+      } catch {
+        state = 'idle'
+        recognition = null
+      }
     },
 
     speakLines(lines, onLineStart, onDone) {
@@ -52,10 +63,12 @@ export function createVoiceController(): VoiceController {
       }
       window.speechSynthesis.cancel()
       state = 'speaking'
+      const generation = ++speakGeneration  // this call's unique ID
 
       let index = 0
 
       const speakNext = () => {
+        if (generation !== speakGeneration) return  // superseded by a newer call
         if (index >= lines.length) {
           state = 'idle'
           onDone()
@@ -63,12 +76,15 @@ export function createVoiceController(): VoiceController {
         }
         const utterance = new SpeechSynthesisUtterance(lines[index])
         utterance.lang = 'zh-CN'
-        utterance.onstart = () => onLineStart(index)
+        utterance.onstart = () => {
+          if (generation === speakGeneration) onLineStart(index)
+        }
         utterance.onend = () => {
           index++
           speakNext()
         }
         utterance.onerror = () => {
+          if (generation !== speakGeneration) return
           state = 'idle'
           onDone()
         }

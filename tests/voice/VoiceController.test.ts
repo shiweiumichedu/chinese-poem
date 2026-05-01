@@ -111,4 +111,56 @@ describe('VoiceController', () => {
     expect(mockSpeak).toHaveBeenCalledTimes(1) // first line queued immediately
     expect(ctrl.state).toBe('speaking')
   })
+
+  it('speakLines chains utterances sequentially and fires onLineStart per line', () => {
+    const utts: any[] = []
+    ;(window as any).SpeechSynthesisUtterance = class {
+      text: string; lang = ''; onstart: (() => void) | null = null
+      onend: (() => void) | null = null; onerror: (() => void) | null = null
+      constructor(t: string) { this.text = t; utts.push(this) }
+    }
+    const onLineStart = vi.fn()
+    const onDone = vi.fn()
+    const ctrl = createVoiceController()
+
+    ctrl.speakLines(['床前明月光', '疑是地上霜'], onLineStart, onDone)
+
+    expect(mockSpeak).toHaveBeenCalledTimes(1)
+    utts[0].onstart()
+    expect(onLineStart).toHaveBeenCalledWith(0)
+
+    utts[0].onend()
+    expect(mockSpeak).toHaveBeenCalledTimes(2)
+    utts[1].onstart()
+    expect(onLineStart).toHaveBeenCalledWith(1)
+
+    utts[1].onend()
+    expect(onDone).toHaveBeenCalledTimes(1)
+    expect(ctrl.state).toBe('idle')
+  })
+
+  it('double startListening aborts old session', () => {
+    const ctrl = createVoiceController()
+    ctrl.startListening(vi.fn())
+    ctrl.startListening(vi.fn())
+    // Should still be listening (not crashed), only one active session
+    expect(ctrl.state).toBe('listening')
+  })
+
+  it('speakLines called while speaking does not call old onDone', () => {
+    ;(window as any).SpeechSynthesisUtterance = class {
+      text = ''; lang = ''; onstart = null; onend = null; onerror: ((e: any) => void) | null = null
+      constructor(t: string) { this.text = t }
+    }
+    const onDone1 = vi.fn()
+    const onDone2 = vi.fn()
+    const ctrl = createVoiceController()
+
+    ctrl.speakLines(['第一首'], vi.fn(), onDone1)
+    // Call again immediately (interrupts first)
+    ctrl.speakLines(['第二首'], vi.fn(), onDone2)
+
+    // onDone1 should NOT be called (its generation was superseded)
+    expect(onDone1).not.toHaveBeenCalled()
+  })
 })
