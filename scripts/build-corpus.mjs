@@ -1,10 +1,10 @@
 // scripts/build-corpus.mjs
-import { writeFileSync, mkdirSync } from 'fs'
+import { writeFileSync, mkdirSync, statSync } from 'fs'
 
 const RAW_BASE = 'https://raw.githubusercontent.com/chinese-poetry/chinese-poetry/master'
 
 async function fetchJson(url) {
-  const res = await fetch(url)
+  const res = await fetch(url, { signal: AbortSignal.timeout(15_000) })
   if (!res.ok) throw new Error(`HTTP ${res.status}: ${url}`)
   return res.json()
 }
@@ -23,9 +23,9 @@ async function loadAuthorMap(url) {
   }
 }
 
-async function loadPoemFiles(urlPattern, dynasty, authorMap, maxFiles) {
+async function loadPoemFiles(urlPattern, dynasty, authorMap, maxFileIndex) {
   const poems = []
-  for (let i = 0; i <= maxFiles; i += 1000) {
+  for (let i = 0; i <= maxFileIndex; i += 1000) {
     const url = urlPattern.replace('${N}', i)
     try {
       const batch = await fetchJson(url)
@@ -36,7 +36,7 @@ async function loadPoemFiles(urlPattern, dynasty, authorMap, maxFiles) {
           title: p.title.trim(),
           author: (p.author || '').trim(),
           dynasty,
-          authorBackground: authorMap.get(p.author) || '',
+          authorBackground: '',
           lines: p.paragraphs.map(l => l.trim()).filter(Boolean),
         })
       }
@@ -51,7 +51,8 @@ async function loadPoemFiles(urlPattern, dynasty, authorMap, maxFiles) {
 }
 
 async function main() {
-  // Authors live in 全唐诗/ (URL-encoded as %E5%85%A8%E5%94%90%E8%AF%97)
+  // Both Tang and Song poems (诗) live in 全唐诗/ (URL-encoded as %E5%85%A8%E5%94%90%E8%AF%97)
+  // Song shi (poet.song.*.json) are in the SAME directory as Tang poems — NOT in a subdirectory
   const TANG_DIR = `${RAW_BASE}/%E5%85%A8%E5%94%90%E8%AF%97`
 
   console.log('Loading author metadata...')
@@ -69,10 +70,10 @@ async function main() {
     57000
   )
 
-  // Song shi (诗) poems are in 全唐诗/error/ subdirectory
+  // Song shi (诗) poems are in the same 全唐诗/ directory as Tang poems
   console.log('Loading Song poems...')
   const songPoems = await loadPoemFiles(
-    `${TANG_DIR}/error/poet.song.\${N}.json`,
+    `${TANG_DIR}/poet.song.\${N}.json`,
     'song',
     songAuthors,
     254000
@@ -81,10 +82,38 @@ async function main() {
   const corpus = [...tangPoems, ...songPoems]
   console.log(`\nTotal corpus: ${corpus.length} poems`)
 
+  // Build author bio map: merged Tang + Song (Tang takes precedence on name collision)
+  const authorsObj = {}
+  for (const [name, bio] of songAuthors) {
+    authorsObj[name] = bio
+  }
+  for (const [name, bio] of tangAuthors) {
+    authorsObj[name] = bio
+  }
+
   mkdirSync('public', { recursive: true })
-  writeFileSync('public/corpus.json', JSON.stringify(corpus))
-  const sizeMB = (Buffer.byteLength(JSON.stringify(corpus)) / 1024 / 1024).toFixed(1)
-  console.log(`Written to public/corpus.json (${sizeMB} MB)`)
+
+  // Write authors.json (bios only, keyed by author name)
+  const authorsJson = JSON.stringify(authorsObj)
+  writeFileSync('public/authors.json', authorsJson)
+  const authorsSizeMB = (Buffer.byteLength(authorsJson) / 1024 / 1024).toFixed(2)
+  console.log(`Written to public/authors.json (${authorsSizeMB} MB, ${Object.keys(authorsObj).length} authors)`)
+
+  // Write corpus.json (poems with authorBackground: "" — bios loaded separately at runtime)
+  const corpusJson = JSON.stringify(corpus)
+  writeFileSync('public/corpus.json', corpusJson)
+
+  const corpusSizeBytes = statSync('public/corpus.json').size
+  const corpusSizeMB = (corpusSizeBytes / 1024 / 1024).toFixed(2)
+  console.log(`Written to public/corpus.json (${corpusSizeMB} MB)`)
+
+  if (corpusSizeBytes > 10 * 1024 * 1024) {
+    console.warn(`WARNING: corpus.json is ${corpusSizeMB}MB, may exceed Workbox cache limit`)
+  }
+  if (corpusSizeBytes > 14 * 1024 * 1024) {
+    console.error(`ERROR: corpus.json is ${corpusSizeMB}MB, exceeds 14MB Workbox hard limit — aborting`)
+    process.exit(1)
+  }
 }
 
 main().catch(e => { console.error(e); process.exit(1) })

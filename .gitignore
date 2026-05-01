@@ -1,4 +1,5 @@
 node_modules/
 dist/
 public/corpus.json
+public/authors.json
 .superpowers/
