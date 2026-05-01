@@ -23,7 +23,7 @@ async function loadAuthorMap(url) {
   }
 }
 
-async function loadPoemFiles(urlPattern, dynasty, authorMap, maxFileIndex, maxPoems) {
+async function loadPoemFiles(urlPattern, dynasty, maxFileIndex, maxPoems) {
   const poems = []
   for (let i = 0; i <= maxFileIndex; i += 1000) {
     const url = urlPattern.replace('${N}', i)
@@ -68,7 +68,6 @@ async function main() {
   const tangPoems = await loadPoemFiles(
     `${TANG_DIR}/poet.tang.\${N}.json`,
     'tang',
-    tangAuthors,
     57000,
     15000
   )
@@ -78,7 +77,6 @@ async function main() {
   const songPoems = await loadPoemFiles(
     `${TANG_DIR}/poet.song.\${N}.json`,
     'song',
-    songAuthors,
     254000,
     15000
   )
@@ -111,8 +109,8 @@ async function main() {
   const corpusSizeMB = (corpusSizeBytes / 1024 / 1024).toFixed(2)
   console.log(`Written to public/corpus.json (${corpusSizeMB} MB)`)
 
-  if (corpusSizeBytes > 10 * 1024 * 1024) {
-    console.warn(`WARNING: corpus.json is ${corpusSizeMB}MB, may exceed Workbox cache limit`)
+  if (corpusSizeBytes > 9.5 * 1024 * 1024) {
+    console.warn(`WARNING: corpus.json is ${corpusSizeMB}MB, approaching 10MB design target`)
   }
   if (corpusSizeBytes > 14 * 1024 * 1024) {
     console.error(`ERROR: corpus.json is ${corpusSizeMB}MB, exceeds 14MB Workbox hard limit — aborting`)
