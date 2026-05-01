@@ -172,19 +172,19 @@ describe('LibraryTab', () => {
 
   it('renders 我的诗库 and 浏览诗库 sub-tab buttons', () => {
     render(<LibraryTab {...makeProps()} />)
-    expect(screen.getByRole('button', { name: '我的诗库' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '浏览诗库' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: '我的诗库' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: '浏览诗库' })).toBeInTheDocument()
   })
 
   it('defaults to 我的诗库 sub-tab', () => {
     render(<LibraryTab {...makeProps()} />)
-    expect(screen.getByRole('button', { name: '我的诗库' })).toHaveAttribute('aria-selected', 'true')
-    expect(screen.getByRole('button', { name: '浏览诗库' })).toHaveAttribute('aria-selected', 'false')
+    expect(screen.getByRole('tab', { name: '我的诗库' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tab', { name: '浏览诗库' })).toHaveAttribute('aria-selected', 'false')
   })
 
   it('switching to 浏览诗库 shows the browse search input', () => {
     render(<LibraryTab {...makeProps()} />)
-    fireEvent.click(screen.getByRole('button', { name: '浏览诗库' }))
+    fireEvent.click(screen.getByRole('tab', { name: '浏览诗库' }))
     expect(screen.getByPlaceholderText('搜索诗库...')).toBeInTheDocument()
   })
 
@@ -192,20 +192,20 @@ describe('LibraryTab', () => {
 
   it('shows "正在加载诗库..." in browse tab when corpusLoading is true', () => {
     render(<LibraryTab {...makeProps({ corpusLoading: true })} />)
-    fireEvent.click(screen.getByRole('button', { name: '浏览诗库' }))
+    fireEvent.click(screen.getByRole('tab', { name: '浏览诗库' }))
     expect(screen.getByText('正在加载诗库...')).toBeInTheDocument()
   })
 
   it('shows first 50 corpus poems by default in browse tab', () => {
     render(<LibraryTab {...makeProps()} />)
-    fireEvent.click(screen.getByRole('button', { name: '浏览诗库' }))
+    fireEvent.click(screen.getByRole('tab', { name: '浏览诗库' }))
     expect(screen.getByText('静夜思')).toBeInTheDocument()
     expect(screen.getByText('春晓')).toBeInTheDocument()
   })
 
   it('browse filters results by search query', () => {
     render(<LibraryTab {...makeProps()} />)
-    fireEvent.click(screen.getByRole('button', { name: '浏览诗库' }))
+    fireEvent.click(screen.getByRole('tab', { name: '浏览诗库' }))
     fireEvent.change(screen.getByPlaceholderText('搜索诗库...'), { target: { value: '春晓' } })
     expect(screen.queryByText('静夜思')).not.toBeInTheDocument()
     expect(screen.getByText('春晓')).toBeInTheDocument()
@@ -213,7 +213,7 @@ describe('LibraryTab', () => {
 
   it('browse excludes already-saved poems from results', () => {
     render(<LibraryTab {...makeProps({ savedPoems: [savedPoem] })} />)
-    fireEvent.click(screen.getByRole('button', { name: '浏览诗库' }))
+    fireEvent.click(screen.getByRole('tab', { name: '浏览诗库' }))
     // savedPoem has id 'c1' (静夜思) — should not appear in browse results
     const browseSection = screen.getByPlaceholderText('搜索诗库...').closest('div')!
     expect(browseSection).not.toHaveTextContent('静夜思')
@@ -222,21 +222,29 @@ describe('LibraryTab', () => {
 
   it('tapping a browse result opens PoemPreview', () => {
     render(<LibraryTab {...makeProps()} />)
-    fireEvent.click(screen.getByRole('button', { name: '浏览诗库' }))
+    fireEvent.click(screen.getByRole('tab', { name: '浏览诗库' }))
     fireEvent.click(screen.getByRole('button', { name: /添加 静夜思/ }))
     expect(screen.getByRole('button', { name: '确认添加' })).toBeInTheDocument()
   })
 
   it('browse shows no-results message when query matches nothing', () => {
     render(<LibraryTab {...makeProps()} />)
-    fireEvent.click(screen.getByRole('button', { name: '浏览诗库' }))
+    fireEvent.click(screen.getByRole('tab', { name: '浏览诗库' }))
     fireEvent.change(screen.getByPlaceholderText('搜索诗库...'), { target: { value: 'zzz不存在' } })
     expect(screen.getByText('未找到匹配的诗')).toBeInTheDocument()
   })
 
+  it('shows all-added message in browse when all corpus poems are saved', () => {
+    const CORPUS_POEMS = [corpusPoem, corpusPoem2]
+    const allSaved = CORPUS_POEMS.map(p => ({ ...p, addedAt: 0 }))
+    render(<LibraryTab {...makeProps({ savedPoems: allSaved })} />)
+    fireEvent.click(screen.getByRole('tab', { name: '浏览诗库' }))
+    expect(screen.getByText('所有诗词已添加到诗库')).toBeInTheDocument()
+  })
+
   it('shows corpus error message in browse tab when corpus failed', async () => {
     render(<LibraryTab {...makeProps()} corpusError="failed to load" />)
-    await userEvent.click(screen.getByRole('button', { name: '浏览诗库' }))
+    await userEvent.click(screen.getByRole('tab', { name: '浏览诗库' }))
     expect(screen.getByText('诗库加载失败')).toBeInTheDocument()
   })
 })

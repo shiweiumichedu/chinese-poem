@@ -101,8 +101,9 @@ export function LibraryTab({
 
   return (
     <div className="library-tab">
-      <div className="sub-tabs">
+      <div className="sub-tabs" role="tablist">
         <button
+          role="tab"
           className={`sub-tab${activeSubTab === 'mine' ? ' active' : ''}`}
           aria-selected={activeSubTab === 'mine'}
           onClick={() => setActiveSubTab('mine')}
@@ -110,6 +111,7 @@ export function LibraryTab({
           我的诗库
         </button>
         <button
+          role="tab"
           className={`sub-tab${activeSubTab === 'browse' ? ' active' : ''}`}
           aria-selected={activeSubTab === 'browse'}
           onClick={() => setActiveSubTab('browse')}
@@ -187,27 +189,23 @@ export function LibraryTab({
           ) : (
             <div className="browse-results">
               {browseResults.map((poem) => (
-                <div key={poem.id} className="browse-result-item">
-                  <button
-                    className="browse-result-info"
-                    onClick={() => setPreview(poem)}
-                  >
-                    <span className="browse-result-title">{poem.title}</span>
-                    <span className="browse-result-meta">
-                      {poem.author} · {DYNASTY_LABEL[poem.dynasty] ?? poem.dynasty}
-                    </span>
-                  </button>
-                  <button
-                    className="browse-result-add"
-                    aria-label={`添加 ${poem.title}`}
-                    onClick={() => setPreview(poem)}
-                  >
-                    ＋
-                  </button>
-                </div>
+                <button
+                  key={poem.id}
+                  className="browse-result-item"
+                  onClick={() => setPreview(poem)}
+                  aria-label={`添加 ${poem.title}`}
+                >
+                  <span className="browse-result-title">{poem.title}</span>
+                  <span className="browse-result-meta">
+                    {poem.author} · {DYNASTY_LABEL[poem.dynasty] ?? poem.dynasty}
+                  </span>
+                  <span className="browse-result-add" aria-hidden="true">＋</span>
+                </button>
               ))}
-              {browseResults.length === 0 && browseQuery && (
-                <p className="browse-no-results">未找到匹配的诗</p>
+              {browseResults.length === 0 && (
+                <p className="browse-no-results">
+                  {browseQuery ? '未找到匹配的诗' : '所有诗词已添加到诗库'}
+                </p>
               )}
             </div>
           )}
