@@ -7,14 +7,8 @@ export interface CorpusPoem {
   lines: string[]
 }
 
-export interface SavedPoem {
-  id: string
-  title: string
-  author: string
-  dynasty: string
-  authorBackground: string
+export interface SavedPoem extends CorpusPoem {
   writingBackground?: string
-  lines: string[]
   addedAt: number
 }
 
