@@ -10,7 +10,8 @@ export function useVoiceController() {
   const [voiceState, setVoiceState] = useState<VoiceState>('idle')
   const [ttsRate, setTtsRateState] = useState<number>(() => {
     const stored = localStorage.getItem(RATE_KEY)
-    return stored ? parseFloat(stored) : 1.0
+    const parsed = parseFloat(stored ?? '')
+    return Number.isFinite(parsed) ? parsed : 1.0
   })
   const ttsRateRef = useRef(ttsRate)
   useEffect(() => { ttsRateRef.current = ttsRate }, [ttsRate])

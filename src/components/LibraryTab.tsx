@@ -154,7 +154,7 @@ export function LibraryTab({
                 ＋ 添加新诗 <span aria-hidden="true">🎤</span>
               </button>
             ) : (
-              <div className="add-text-section">
+              <div className="add-text-input">
                 <input
                   type="text"
                   placeholder="输入诗名..."
