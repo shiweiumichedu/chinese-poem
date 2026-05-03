@@ -263,7 +263,7 @@ export function ListenTab({
           }, proceedToComplete)
         })
       } else if (!hasRepeatRef.current && (poem.rating ?? 0) < 5) {
-        speakLines(['要不要加颗星'], () => setHighlightedLine(null), () => {
+        speakLines(['要不要加颗星？'], () => setHighlightedLine(null), () => {
           startListening((spokenText) => {
             if (isYes(spokenText)) {
               const currentRating = poem.rating ?? 0

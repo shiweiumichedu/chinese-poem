@@ -92,7 +92,7 @@ describe('ListenTab recitation rating upgrade', () => {
     drivePerfectRecitation(speakLinesDones, startListeningCallbacks)
 
     const spoken = speakLines.mock.calls.map((c: unknown[]) => c[0])
-    expect(spoken).toContainEqual(['要不要加颗星'])
+    expect(spoken).toContainEqual(['要不要加颗星？'])
   })
 
   it('does not offer 加颗星 when poem is already rated 5 stars', () => {
@@ -105,7 +105,7 @@ describe('ListenTab recitation rating upgrade', () => {
     drivePerfectRecitation(speakLinesDones, startListeningCallbacks)
 
     const spoken = speakLines.mock.calls.map((c: unknown[]) => c[0])
-    expect(spoken).not.toContainEqual(['要不要加颗星'])
+    expect(spoken).not.toContainEqual(['要不要加颗星？'])
   })
 
   it('saves rating + 1 and speaks 已加一颗星 when user says 要', async () => {
@@ -117,7 +117,7 @@ describe('ListenTab recitation rating upgrade', () => {
 
     drivePerfectRecitation(speakLinesDones, startListeningCallbacks)
 
-    // speakLines[5] = ['要不要加颗星']; fire its done callback → startListening[4]
+    // speakLines[5] = ['要不要加颗星？']; fire its done callback → startListening[4]
     act(() => speakLinesDones[5]())
     act(() => startListeningCallbacks[4]('要'))
 
@@ -172,6 +172,6 @@ describe('ListenTab recitation rating upgrade', () => {
     act(() => startListeningCallbacks[4]('低头思故乡'))
 
     const spoken = speakLines.mock.calls.map((c: unknown[]) => c[0])
-    expect(spoken).not.toContainEqual(['要不要加颗星'])
+    expect(spoken).not.toContainEqual(['要不要加颗星？'])
   })
 })
