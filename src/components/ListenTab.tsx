@@ -110,6 +110,7 @@ export function ListenTab({
   const currentPoemRef = useRef<SavedPoem | null>(null)
   const manuallyStoppedRef = useRef(false)
   const recitingRef = useRef(false)
+  const hasWrongAnswerRef = useRef(false)
 
   useEffect(() => { autoPlayRef.current = autoPlay }, [autoPlay])
   useEffect(() => { repeatPlayRef.current = repeatPlay }, [repeatPlay])
@@ -204,6 +205,7 @@ export function ListenTab({
     setReciteSentenceIndex(0)
     setRecognizedText('')
     recitingRef.current = false
+    hasWrongAnswerRef.current = false
   }
 
   function getReciteSentences(poem: SavedPoem): string[] {
@@ -257,6 +259,7 @@ export function ListenTab({
           advanceReciteSentence(sentenceIndex + 1)
         })
       } else {
+        hasWrongAnswerRef.current = true
         speakLines(['还是不对，请自己纠正'], () => setHighlightedLine(null), () => {
           advanceReciteSentence(sentenceIndex + 1)
         })
@@ -298,6 +301,7 @@ export function ListenTab({
     const sentences = getReciteSentences(poem)
     if (!sentences.length) return
     stop()
+    hasWrongAnswerRef.current = false
     setHighlightedLine(null)
     setReciting(true)
     recitingRef.current = true
