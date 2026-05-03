@@ -234,9 +234,27 @@ export function ListenTab({
     if (!poem) return
     const sentences = getReciteSentences(poem)
     if (nextIndex >= sentences.length) {
-      speakLines(['背诵完成'], () => setHighlightedLine(null), () => {
-        handleReciteComplete()
-      })
+      const proceedToComplete = () => {
+        speakLines(['背诵完成'], () => setHighlightedLine(null), () => {
+          handleReciteComplete()
+        })
+      }
+      if (hasWrongAnswerRef.current && poem && (poem.rating ?? 0) >= 2) {
+        speakLines(['要不要降一颗星？'], () => setHighlightedLine(null), () => {
+          startListening((spokenText) => {
+            if (isYes(spokenText)) {
+              const updated = { ...poem, rating: (poem.rating as number) - 1 }
+              setPoem(updated)
+              void savePoem(updated).then(() => onPoemUpdated())
+              speakLines(['已降一颗星'], () => setHighlightedLine(null), proceedToComplete)
+            } else {
+              proceedToComplete()
+            }
+          }, proceedToComplete)
+        })
+      } else {
+        proceedToComplete()
+      }
       return
     }
     setReciteSentenceIndex(nextIndex)
