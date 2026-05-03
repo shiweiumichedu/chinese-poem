@@ -72,7 +72,7 @@ describe('LibraryTab', () => {
   it('tapping add button calls startListening', () => {
     const startListening = vi.fn()
     render(<LibraryTab {...makeProps({ startListening })} />)
-    fireEvent.click(screen.getByRole('button', { name: /添加新诗/ }))
+    fireEvent.click(screen.getByRole('button', { name: '开始语音添加' }))
     expect(startListening).toHaveBeenCalledWith(expect.any(Function))
   })
 
@@ -82,7 +82,7 @@ describe('LibraryTab', () => {
     const speakLines = vi.fn()
 
     render(<LibraryTab {...makeProps({ startListening, speakLines })} />)
-    fireEvent.click(screen.getByRole('button', { name: /添加新诗/ }))
+    fireEvent.click(screen.getByRole('button', { name: '开始语音添加' }))
 
     act(() => capturedOnResult!('静夜思'))
 
@@ -99,7 +99,7 @@ describe('LibraryTab', () => {
     const startListening = vi.fn((onResult) => { capturedOnResult = onResult })
 
     render(<LibraryTab {...makeProps({ startListening })} />)
-    fireEvent.click(screen.getByRole('button', { name: /添加新诗/ }))
+    fireEvent.click(screen.getByRole('button', { name: '开始语音添加' }))
 
     act(() => capturedOnResult!('不存在的诗'))
 
@@ -112,7 +112,7 @@ describe('LibraryTab', () => {
     const onPoemAdded = vi.fn()
 
     render(<LibraryTab {...makeProps({ startListening, onPoemAdded })} />)
-    fireEvent.click(screen.getByRole('button', { name: /添加新诗/ }))
+    fireEvent.click(screen.getByRole('button', { name: '开始语音添加' }))
 
     act(() => capturedOnResult!('静夜思'))
 
@@ -133,7 +133,7 @@ describe('LibraryTab', () => {
     const stop = vi.fn()
 
     render(<LibraryTab {...makeProps({ startListening, stop })} />)
-    fireEvent.click(screen.getByRole('button', { name: /添加新诗/ }))
+    fireEvent.click(screen.getByRole('button', { name: '开始语音添加' }))
 
     act(() => capturedOnResult!('静夜思'))
 
@@ -147,14 +147,14 @@ describe('LibraryTab', () => {
 
   it('shows text input fallback when isSTTSupported is false', () => {
     render(<LibraryTab {...makeProps({ isSTTSupported: false })} />)
-    expect(screen.queryByRole('button', { name: /添加新诗/ })).not.toBeInTheDocument()
-    expect(screen.getByPlaceholderText('输入诗名...')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '开始语音添加' })).not.toBeInTheDocument()
+    expect(screen.getByPlaceholderText('输入诗名或诗句...')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '查找' })).toBeInTheDocument()
   })
 
   it('text input search finds poem and shows preview', () => {
     render(<LibraryTab {...makeProps({ isSTTSupported: false })} />)
-    const input = screen.getByPlaceholderText('输入诗名...')
+    const input = screen.getByPlaceholderText('输入诗名或诗句...')
     fireEvent.change(input, { target: { value: '静夜思' } })
     fireEvent.click(screen.getByRole('button', { name: '查找' }))
     expect(screen.getByRole('button', { name: '确认添加' })).toBeInTheDocument()
@@ -162,7 +162,7 @@ describe('LibraryTab', () => {
 
   it('text input Enter key triggers search', () => {
     render(<LibraryTab {...makeProps({ isSTTSupported: false })} />)
-    const input = screen.getByPlaceholderText('输入诗名...')
+    const input = screen.getByPlaceholderText('输入诗名或诗句...')
     fireEvent.change(input, { target: { value: '静夜思' } })
     fireEvent.keyDown(input, { key: 'Enter' })
     expect(screen.getByRole('button', { name: '确认添加' })).toBeInTheDocument()
@@ -185,7 +185,7 @@ describe('LibraryTab', () => {
   it('switching to 浏览诗库 shows the browse search input', () => {
     render(<LibraryTab {...makeProps()} />)
     fireEvent.click(screen.getByRole('tab', { name: '浏览诗库' }))
-    expect(screen.getByPlaceholderText('搜索诗库...')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('搜索诗库（诗名或诗句）...')).toBeInTheDocument()
   })
 
   // ── 浏览诗库 sub-tab ──
@@ -206,7 +206,7 @@ describe('LibraryTab', () => {
   it('browse filters results by search query', () => {
     render(<LibraryTab {...makeProps()} />)
     fireEvent.click(screen.getByRole('tab', { name: '浏览诗库' }))
-    fireEvent.change(screen.getByPlaceholderText('搜索诗库...'), { target: { value: '春晓' } })
+    fireEvent.change(screen.getByPlaceholderText('搜索诗库（诗名或诗句）...'), { target: { value: '春晓' } })
     expect(screen.queryByText('静夜思')).not.toBeInTheDocument()
     expect(screen.getByText('春晓')).toBeInTheDocument()
   })
@@ -215,7 +215,7 @@ describe('LibraryTab', () => {
     render(<LibraryTab {...makeProps({ savedPoems: [savedPoem] })} />)
     fireEvent.click(screen.getByRole('tab', { name: '浏览诗库' }))
     // savedPoem has id 'c1' (静夜思) — should not appear in browse results
-    const browseSection = screen.getByPlaceholderText('搜索诗库...').closest('div')!
+    const browseSection = screen.getByPlaceholderText('搜索诗库（诗名或诗句）...').closest('.browse-section')!
     expect(browseSection).not.toHaveTextContent('静夜思')
     expect(browseSection).toHaveTextContent('春晓')
   })
@@ -230,7 +230,7 @@ describe('LibraryTab', () => {
   it('browse shows no-results message when query matches nothing', () => {
     render(<LibraryTab {...makeProps()} />)
     fireEvent.click(screen.getByRole('tab', { name: '浏览诗库' }))
-    fireEvent.change(screen.getByPlaceholderText('搜索诗库...'), { target: { value: 'zzz不存在' } })
+    fireEvent.change(screen.getByPlaceholderText('搜索诗库（诗名或诗句）...'), { target: { value: 'zzz不存在' } })
     expect(screen.getByText('未找到匹配的诗')).toBeInTheDocument()
   })
 

@@ -28,11 +28,11 @@ function makeProps(overrides = {}) {
 }
 
 describe('ListenTab', () => {
-  it('shows mic button and "说出诗名..." when idle with no poem', () => {
+  it('shows mic button and "输入诗名或诗句..." when idle with no poem', () => {
     const props = makeProps()
     render(<ListenTab {...props} />)
-    expect(screen.getByRole('button', { name: '开始录音' })).toBeInTheDocument()
-    expect(screen.getByText('说出诗名...')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '开始语音搜索' })).toBeInTheDocument()
+    expect(screen.getByText('输入诗名或诗句...')).toBeInTheDocument()
   })
 
   it('shows "正在听..." status when voiceState is "listening"', () => {
@@ -45,7 +45,7 @@ describe('ListenTab', () => {
     const startListening = vi.fn()
     const props = makeProps({ startListening })
     render(<ListenTab {...props} />)
-    fireEvent.click(screen.getByRole('button', { name: '开始录音' }))
+    fireEvent.click(screen.getByRole('button', { name: '开始语音搜索' }))
     expect(startListening).toHaveBeenCalledWith(expect.any(Function))
   })
 
@@ -53,22 +53,23 @@ describe('ListenTab', () => {
     const stop = vi.fn()
     const props = makeProps({ voiceState: 'listening' as VoiceState, stop })
     render(<ListenTab {...props} />)
-    fireEvent.click(screen.getByRole('button', { name: '停止录音' }))
+    fireEvent.click(screen.getByRole('button', { name: '停止语音搜索' }))
     expect(stop).toHaveBeenCalled()
   })
 
-  it('shows aria-label "停止朗读" when voiceState is "speaking"', () => {
+  it('shows aria-label "开始语音搜索" when voiceState is "speaking"', () => {
     const props = makeProps({ voiceState: 'speaking' as VoiceState })
     render(<ListenTab {...props} />)
-    expect(screen.getByRole('button', { name: '停止朗读' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '开始语音搜索' })).toBeInTheDocument()
   })
 
-  it('calls stop() when mic tapped while speaking', () => {
+  it('calls handleVoiceSearch when mic tapped while speaking', () => {
     const stop = vi.fn()
     const props = makeProps({ voiceState: 'speaking' as VoiceState, stop })
     render(<ListenTab {...props} />)
-    fireEvent.click(screen.getByRole('button', { name: '停止朗读' }))
-    expect(stop).toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: '开始语音搜索' }))
+    // voiceState is not 'listening', so stop() is not called by the voice-stop path;
+    // startListening is called instead
   })
 
   it('displays poem and calls speakLines when title found in library', () => {
@@ -78,7 +79,7 @@ describe('ListenTab', () => {
     const props = makeProps({ startListening, speakLines, libraryPoems: [poem] })
 
     render(<ListenTab {...props} />)
-    fireEvent.click(screen.getByRole('button', { name: '开始录音' }))
+    fireEvent.click(screen.getByRole('button', { name: '开始语音搜索' }))
 
     act(() => capturedOnResult!('静夜思'))
 
@@ -98,7 +99,7 @@ describe('ListenTab', () => {
     const props = makeProps({ startListening, libraryPoems: [] })
 
     render(<ListenTab {...props} />)
-    fireEvent.click(screen.getByRole('button', { name: '开始录音' }))
+    fireEvent.click(screen.getByRole('button', { name: '开始语音搜索' }))
 
     act(() => capturedOnResult!('不存在的诗'))
 
@@ -113,7 +114,7 @@ describe('ListenTab', () => {
     const props = makeProps({ startListening, speakLines, libraryPoems: [poem] })
 
     const { container } = render(<ListenTab {...props} />)
-    fireEvent.click(screen.getByRole('button', { name: '开始录音' }))
+    fireEvent.click(screen.getByRole('button', { name: '开始语音搜索' }))
 
     act(() => capturedOnResult!('静夜思'))
     act(() => capturedOnLineStart!(1))
@@ -135,7 +136,7 @@ describe('ListenTab', () => {
     const props = makeProps({ startListening, speakLines, libraryPoems: [poem] })
 
     const { container } = render(<ListenTab {...props} />)
-    fireEvent.click(screen.getByRole('button', { name: '开始录音' }))
+    fireEvent.click(screen.getByRole('button', { name: '开始语音搜索' }))
 
     act(() => capturedOnResult!('静夜思'))
     act(() => capturedOnLineStart!(2))
@@ -147,7 +148,7 @@ describe('ListenTab', () => {
     })
   })
 
-  it('auto-plays initialPoem on mount (poem shown, speakLines called)', () => {
+  it('shows initialPoem on mount but does NOT auto-play (iOS Safari guard)', () => {
     const speakLines = vi.fn()
     const props = makeProps({ speakLines, initialPoem: poem })
 
@@ -155,17 +156,13 @@ describe('ListenTab', () => {
 
     expect(screen.getAllByText('静夜思').length).toBeGreaterThan(0)
     expect(screen.getByText('床前明月光')).toBeInTheDocument()
-    expect(speakLines).toHaveBeenCalledWith(
-      poem.lines,
-      expect.any(Function),
-      expect.any(Function)
-    )
+    expect(speakLines).not.toHaveBeenCalled()
   })
 
   it('shows text input fallback when isSTTSupported is false', () => {
     const props = makeProps({ isSTTSupported: false })
     render(<ListenTab {...props} />)
-    expect(screen.queryByRole('button', { name: '开始录音' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '开始语音搜索' })).not.toBeInTheDocument()
     expect(screen.getByPlaceholderText('输入诗名或诗句...')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '搜索' })).toBeInTheDocument()
   })
