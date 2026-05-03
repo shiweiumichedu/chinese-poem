@@ -1,6 +1,5 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { act } from 'react'
-import { waitFor } from '@testing-library/react'
 import { ListenTab } from '../../src/components/ListenTab'
 import { savePoem } from '../../src/data/PoemLibrary'
 import type { SavedPoem, VoiceState } from '../../src/types'
@@ -48,6 +47,7 @@ function loadPoem(
   })
   startListening.mockImplementation((onResult: (text: string) => void) => {
     startListeningCallbacks.push(onResult)
+    // onIdle (second arg) intentionally not captured — tests drive all transitions manually
   })
 
   const input = screen.getByPlaceholderText('输入诗名或诗句...')
@@ -75,7 +75,7 @@ function drivePerfectRecitation(
   act(() => startListeningCallbacks[2](sentences[2]))
   act(() => speakLinesDones[4]()) // 第四句 done → beginReciteListening(3)
   act(() => startListeningCallbacks[3](sentences[3]))
-  // advanceReciteSentence(4) fires → end of session
+  // advanceReciteSentence(4) fires → end of session → speakLines[5]='要不要加颗星' (when feature is active)
 }
 
 describe('ListenTab recitation rating upgrade', () => {
@@ -160,7 +160,7 @@ describe('ListenTab recitation rating upgrade', () => {
     // speakLines[2]='重复', speakLines[3]='床前明月光' (expected) → listenForCorrection
     act(() => speakLinesDones[2]()) // 重复 done
     act(() => speakLinesDones[3]()) // expected line done → listenForCorrection(0)
-    // Correct on second try → speakLines['正确'] at 4
+    // Correct on second try → speakLines[4]='正确', done → advanceReciteSentence(1) → speakLines[5]='第二句'
     act(() => startListeningCallbacks[1]('床前明月光'))
     act(() => speakLinesDones[4]()) // 正确 done → advanceReciteSentence(1) → 第二句 at 5
     // Sentences 1–3: correct
