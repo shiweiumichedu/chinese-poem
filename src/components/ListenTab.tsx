@@ -239,13 +239,21 @@ export function ListenTab({
           handleReciteComplete()
         })
       }
-      if (hasWrongAnswerRef.current && poem && (poem.rating ?? 0) >= 2) {
+      if (hasWrongAnswerRef.current && (poem.rating ?? 0) >= 2) {
         speakLines(['要不要降一颗星？'], () => setHighlightedLine(null), () => {
           startListening((spokenText) => {
             if (isYes(spokenText)) {
-              const updated = { ...poem, rating: (poem.rating as number) - 1 }
+              const currentRating = poem.rating ?? 0
+              const updated = { ...poem, rating: currentRating - 1 }
               setPoem(updated)
-              void savePoem(updated).then(() => onPoemUpdated())
+              void (async () => {
+                try {
+                  await savePoem(updated)
+                  await onPoemUpdated()
+                } catch (e) {
+                  console.error('Failed to save rating update', e)
+                }
+              })()
               speakLines(['已降一颗星'], () => setHighlightedLine(null), proceedToComplete)
             } else {
               proceedToComplete()
