@@ -111,6 +111,7 @@ export function ListenTab({
   const manuallyStoppedRef = useRef(false)
   const recitingRef = useRef(false)
   const hasWrongAnswerRef = useRef(false)
+  const hasRepeatRef = useRef(false)
 
   useEffect(() => { autoPlayRef.current = autoPlay }, [autoPlay])
   useEffect(() => { repeatPlayRef.current = repeatPlay }, [repeatPlay])
@@ -206,6 +207,7 @@ export function ListenTab({
     setRecognizedText('')
     recitingRef.current = false
     hasWrongAnswerRef.current = false
+    hasRepeatRef.current = false
   }
 
   function getReciteSentences(poem: SavedPoem): string[] {
@@ -255,6 +257,27 @@ export function ListenTab({
                 }
               })()
               speakLines(['已降一颗星'], () => setHighlightedLine(null), proceedToComplete)
+            } else {
+              proceedToComplete()
+            }
+          }, proceedToComplete)
+        })
+      } else if (!hasRepeatRef.current && (poem.rating ?? 0) < 5) {
+        speakLines(['要不要加颗星'], () => setHighlightedLine(null), () => {
+          startListening((spokenText) => {
+            if (isYes(spokenText)) {
+              const currentRating = poem.rating ?? 0
+              const updated = { ...poem, rating: currentRating + 1 }
+              setPoem(updated)
+              void (async () => {
+                try {
+                  await savePoem(updated)
+                  await onPoemUpdated()
+                } catch (e) {
+                  console.error('Failed to save rating update', e)
+                }
+              })()
+              speakLines(['已加一颗星'], () => setHighlightedLine(null), proceedToComplete)
             } else {
               proceedToComplete()
             }
@@ -313,6 +336,7 @@ export function ListenTab({
         advanceReciteSentence(sentenceIndex + 1)
         return
       }
+      hasRepeatRef.current = true
       speakLines(['重复'], () => setHighlightedLine(null), () => {
         speakLines([expected], () => setHighlightedLine(null), () => {
           listenForCorrection(sentenceIndex)
@@ -328,6 +352,7 @@ export function ListenTab({
     if (!sentences.length) return
     stop()
     hasWrongAnswerRef.current = false
+    hasRepeatRef.current = false
     setHighlightedLine(null)
     setReciting(true)
     recitingRef.current = true
