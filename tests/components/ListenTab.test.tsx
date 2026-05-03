@@ -166,7 +166,7 @@ describe('ListenTab', () => {
     const props = makeProps({ isSTTSupported: false })
     render(<ListenTab {...props} />)
     expect(screen.queryByRole('button', { name: '开始录音' })).not.toBeInTheDocument()
-    expect(screen.getByPlaceholderText('输入诗名...')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('输入诗名或诗句...')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '搜索' })).toBeInTheDocument()
   })
 
@@ -175,7 +175,7 @@ describe('ListenTab', () => {
     const props = makeProps({ isSTTSupported: false, speakLines, libraryPoems: [poem] })
 
     render(<ListenTab {...props} />)
-    const input = screen.getByPlaceholderText('输入诗名...')
+    const input = screen.getByPlaceholderText('输入诗名或诗句...')
     fireEvent.change(input, { target: { value: '静夜思' } })
     fireEvent.click(screen.getByRole('button', { name: '搜索' }))
 
@@ -193,7 +193,7 @@ describe('ListenTab', () => {
     const props = makeProps({ isSTTSupported: false, speakLines, libraryPoems: [poem] })
 
     render(<ListenTab {...props} />)
-    const input = screen.getByPlaceholderText('输入诗名...')
+    const input = screen.getByPlaceholderText('输入诗名或诗句...')
     fireEvent.change(input, { target: { value: '静夜思' } })
     fireEvent.keyDown(input, { key: 'Enter' })
 
