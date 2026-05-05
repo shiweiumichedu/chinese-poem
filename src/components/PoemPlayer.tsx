@@ -169,6 +169,7 @@ export function PoemPlayer({ poem, onPlay, onStop, isPlaying, highlightedLine, t
     }
     if (longPressFiredRef.current) {
       e.preventDefault()
+      longPressFiredRef.current = false
     }
   }
 

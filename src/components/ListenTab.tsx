@@ -664,6 +664,7 @@ export function ListenTab({
           poem={currentPoem}
           onPlay={(lines, onLineStart, onDone) => {
             stopRecitingSession()
+            // `lines` is always poem.lines verbatim from PoemPlayer.handlePlay; idx == lineIndex
             const ttsLines = lines.map((l, idx) => buildTtsLine(l, idx, currentPoem.charAnnotations ?? []))
             speakLines(
               ttsLines,
