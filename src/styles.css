@@ -217,8 +217,8 @@ body {
   border: 1px solid #4a4a7a; background: #1e1e3a; color: #8888aa; white-space: nowrap;
 }
 .btn-bold.active { background: #4a6a8a; color: #fff; border-color: #6a8aaa; }
-ruby { display: inline; }
-rt { font-size: 0.5em; color: #9a8a6a; line-height: 1; }
+.poem-line ruby { display: inline; }
+.poem-line rt { font-size: 0.5em; color: #9a8a6a; line-height: 1; }
 .annotation-popup {
   position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
   background: #1a1a2a; border: 1px solid #6a6acc; border-radius: 12px;

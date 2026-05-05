@@ -224,74 +224,69 @@ describe('PoemPlayer', () => {
     expect(screen.queryByRole('button', { name: 'B' })).not.toBeInTheDocument()
   })
 
-  it('long press on character opens annotation popup', () => {
-    vi.useFakeTimers()
-    render(<PoemPlayer {...defaultProps} onCharAnnotate={vi.fn()} />)
-    const charSpan = document.querySelector('.poem-line span') as Element
-    fireEvent.touchStart(charSpan)
-    act(() => { vi.advanceTimersByTime(500) })
-    expect(screen.getByPlaceholderText('拼音 (e.g. huán)')).toBeInTheDocument()
-    vi.useRealTimers()
-  })
+  describe('annotation popup', () => {
+    beforeEach(() => { vi.useFakeTimers() })
+    afterEach(() => { vi.useRealTimers() })
 
-  it('popup pre-fills fields for existing annotation', () => {
-    vi.useFakeTimers()
-    const poemWithAnnotation = {
-      ...poem,
-      charAnnotations: [{ lineIndex: 0, charIndex: 0, pinyin: 'chuáng', substitute: '床' }],
-    }
-    render(<PoemPlayer {...defaultProps} poem={poemWithAnnotation} onCharAnnotate={vi.fn()} onCharAnnotateRemove={vi.fn()} />)
-    const charSpan = document.querySelector('.poem-line ruby') as Element
-    fireEvent.touchStart(charSpan)
-    act(() => { vi.advanceTimersByTime(500) })
-    expect((screen.getByPlaceholderText('拼音 (e.g. huán)') as HTMLInputElement).value).toBe('chuáng')
-    expect((screen.getByPlaceholderText('替换字 (e.g. 环)') as HTMLInputElement).value).toBe('床')
-    vi.useRealTimers()
-  })
+    it('long press on character opens annotation popup', () => {
+      render(<PoemPlayer {...defaultProps} onCharAnnotate={vi.fn()} />)
+      const charSpan = document.querySelector('.poem-line span') as Element
+      fireEvent.touchStart(charSpan)
+      act(() => { vi.advanceTimersByTime(500) })
+      expect(screen.getByPlaceholderText('拼音 (e.g. huán)')).toBeInTheDocument()
+    })
 
-  it('Save button calls onCharAnnotate and closes popup', () => {
-    vi.useFakeTimers()
-    const onCharAnnotate = vi.fn()
-    render(<PoemPlayer {...defaultProps} onCharAnnotate={onCharAnnotate} />)
-    const charSpan = document.querySelector('.poem-line span') as Element
-    fireEvent.touchStart(charSpan)
-    act(() => { vi.advanceTimersByTime(500) })
-    fireEvent.change(screen.getByPlaceholderText('拼音 (e.g. huán)'), { target: { value: 'chuáng' } })
-    fireEvent.change(screen.getByPlaceholderText('替换字 (e.g. 环)'), { target: { value: '床' } })
-    fireEvent.click(screen.getByRole('button', { name: '保存' }))
-    expect(onCharAnnotate).toHaveBeenCalledWith(0, 0, 'chuáng', '床')
-    expect(screen.queryByPlaceholderText('拼音 (e.g. huán)')).not.toBeInTheDocument()
-    vi.useRealTimers()
-  })
+    it('popup pre-fills fields for existing annotation', () => {
+      const poemWithAnnotation = {
+        ...poem,
+        charAnnotations: [{ lineIndex: 0, charIndex: 0, pinyin: 'chuáng', substitute: '床' }],
+      }
+      render(<PoemPlayer {...defaultProps} poem={poemWithAnnotation} onCharAnnotate={vi.fn()} onCharAnnotateRemove={vi.fn()} />)
+      const charSpan = document.querySelector('.poem-line ruby') as Element
+      fireEvent.touchStart(charSpan)
+      act(() => { vi.advanceTimersByTime(500) })
+      expect((screen.getByPlaceholderText('拼音 (e.g. huán)') as HTMLInputElement).value).toBe('chuáng')
+      expect((screen.getByPlaceholderText('替换字 (e.g. 环)') as HTMLInputElement).value).toBe('床')
+    })
 
-  it('Remove button calls onCharAnnotateRemove and closes popup', () => {
-    vi.useFakeTimers()
-    const onCharAnnotateRemove = vi.fn()
-    const poemWithAnnotation = {
-      ...poem,
-      charAnnotations: [{ lineIndex: 0, charIndex: 0, pinyin: 'chuáng', substitute: '床' }],
-    }
-    render(<PoemPlayer {...defaultProps} poem={poemWithAnnotation} onCharAnnotate={vi.fn()} onCharAnnotateRemove={onCharAnnotateRemove} />)
-    const charSpan = document.querySelector('.poem-line ruby') as Element
-    fireEvent.touchStart(charSpan)
-    act(() => { vi.advanceTimersByTime(500) })
-    fireEvent.click(screen.getByRole('button', { name: '删除' }))
-    expect(onCharAnnotateRemove).toHaveBeenCalledWith(0, 0)
-    expect(screen.queryByPlaceholderText('拼音 (e.g. huán)')).not.toBeInTheDocument()
-    vi.useRealTimers()
-  })
+    it('Save button calls onCharAnnotate and closes popup', () => {
+      const onCharAnnotate = vi.fn()
+      render(<PoemPlayer {...defaultProps} onCharAnnotate={onCharAnnotate} />)
+      const charSpan = document.querySelector('.poem-line span') as Element
+      fireEvent.touchStart(charSpan)
+      act(() => { vi.advanceTimersByTime(500) })
+      fireEvent.change(screen.getByPlaceholderText('拼音 (e.g. huán)'), { target: { value: 'chuáng' } })
+      fireEvent.change(screen.getByPlaceholderText('替换字 (e.g. 环)'), { target: { value: '床' } })
+      fireEvent.click(screen.getByRole('button', { name: '保存' }))
+      expect(onCharAnnotate).toHaveBeenCalledWith(0, 0, 'chuáng', '床')
+      expect(screen.queryByPlaceholderText('拼音 (e.g. huán)')).not.toBeInTheDocument()
+    })
 
-  it('Cancel button closes popup without calling handlers', () => {
-    vi.useFakeTimers()
-    const onCharAnnotate = vi.fn()
-    render(<PoemPlayer {...defaultProps} onCharAnnotate={onCharAnnotate} />)
-    const charSpan = document.querySelector('.poem-line span') as Element
-    fireEvent.touchStart(charSpan)
-    act(() => { vi.advanceTimersByTime(500) })
-    fireEvent.click(screen.getByRole('button', { name: '取消' }))
-    expect(onCharAnnotate).not.toHaveBeenCalled()
-    expect(screen.queryByPlaceholderText('拼音 (e.g. huán)')).not.toBeInTheDocument()
-    vi.useRealTimers()
+    it('Remove button calls onCharAnnotateRemove and closes popup', () => {
+      const onCharAnnotateRemove = vi.fn()
+      const poemWithAnnotation = {
+        ...poem,
+        charAnnotations: [{ lineIndex: 0, charIndex: 0, pinyin: 'chuáng', substitute: '床' }],
+      }
+      render(<PoemPlayer {...defaultProps} poem={poemWithAnnotation} onCharAnnotate={vi.fn()} onCharAnnotateRemove={onCharAnnotateRemove} />)
+      const charSpan = document.querySelector('.poem-line ruby') as Element
+      fireEvent.touchStart(charSpan)
+      act(() => { vi.advanceTimersByTime(500) })
+      fireEvent.click(screen.getByRole('button', { name: '删除' }))
+      expect(onCharAnnotateRemove).toHaveBeenCalledWith(0, 0)
+      expect(screen.queryByPlaceholderText('拼音 (e.g. huán)')).not.toBeInTheDocument()
+    })
+
+    it('Cancel button closes popup without calling handlers', () => {
+      const onCharAnnotate = vi.fn()
+      render(<PoemPlayer {...defaultProps} onCharAnnotate={onCharAnnotate} />)
+      const charSpan = document.querySelector('.poem-line span') as Element
+      fireEvent.touchStart(charSpan)
+      act(() => { vi.advanceTimersByTime(500) })
+      fireEvent.click(screen.getByRole('button', { name: '取消' }))
+      expect(onCharAnnotate).not.toHaveBeenCalled()
+      expect(screen.queryByPlaceholderText('拼音 (e.g. huán)')).not.toBeInTheDocument()
+    })
   })
 
 })

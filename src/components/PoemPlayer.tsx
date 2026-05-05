@@ -93,6 +93,19 @@ export function PoemPlayer({ poem, onPlay, onStop, isPlaying, highlightedLine, t
     )
     if (newTop !== null) scrollEl.scrollTop = newTop
   }, [displayHighlight])
+
+  useEffect(() => {
+    return () => {
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    setAnnotationTarget(null)
+  }, [poem.id])
+
   const displayLines = buildDisplayLines(poem.lines)
 
   function handlePlay() {
@@ -224,6 +237,7 @@ export function PoemPlayer({ poem, onPlay, onStop, isPlaying, highlightedLine, t
               key={`${line.sourceLineIndex}-${i}`}
               className={`poem-line${line.sourceLineIndex === displayHighlight ? ' highlighted' : ''}${isBoldLine ? ' bold' : ''}${onLineEdit && !isPlaying ? ' editable' : ''}`}
               onClick={() => {
+                if (longPressFiredRef.current) return
                 onSpeakLine?.(line.sourceLineIndex)
                 startEdit(line.sourceLineIndex)
               }}
