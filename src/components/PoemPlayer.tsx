@@ -43,6 +43,8 @@ interface PoemPlayerProps {
   onLineEdit?: (lineIndex: number, newText: string) => void
   onLineBoldToggle?: (lineIndex: number) => void
   onSpeakLine?: (lineIndex: number) => void
+  onCharAnnotate?: (lineIndex: number, charIndex: number, pinyin: string, substitute: string) => void
+  onCharAnnotateRemove?: (lineIndex: number, charIndex: number) => void
   autoPlay?: boolean
   onAutoPlayToggle?: () => void
   repeatPlay?: boolean
@@ -53,13 +55,23 @@ interface PoemPlayerProps {
   onNextPoem?: () => void
 }
 
-export function PoemPlayer({ poem, onPlay, onStop, isPlaying, highlightedLine, ttsRate, setTtsRate, onLineEdit, onLineBoldToggle, onSpeakLine, autoPlay, onAutoPlayToggle, repeatPlay, onRepeatPlayToggle, reciting, onReciteToggle, onBack, nextPoem, onNextPoem }: PoemPlayerProps) {
+export function PoemPlayer({ poem, onPlay, onStop, isPlaying, highlightedLine, ttsRate, setTtsRate, onLineEdit, onLineBoldToggle, onSpeakLine, autoPlay, onAutoPlayToggle, repeatPlay, onRepeatPlayToggle, reciting, onReciteToggle, onBack, nextPoem, onNextPoem, onCharAnnotate, onCharAnnotateRemove }: PoemPlayerProps) {
   const [internalHighlight, setInternalHighlight] = useState<number | null>(null)
   const [editingLine, setEditingLine] = useState<number | null>(null)
   const [editValue, setEditValue] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
   const committingRef = useRef(false)
   const containerRef = useRef<HTMLDivElement>(null)
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const longPressFiredRef = useRef(false)
+  const [annotationTarget, setAnnotationTarget] = useState<{
+    lineIndex: number
+    charIndex: number
+    char: string
+    existing?: { pinyin: string; substitute: string }
+  } | null>(null)
+  const [annotPinyin, setAnnotPinyin] = useState('')
+  const [annotSubstitute, setAnnotSubstitute] = useState('')
 
   const displayHighlight = highlightedLine !== undefined ? highlightedLine : internalHighlight
 
@@ -118,6 +130,34 @@ export function PoemPlayer({ poem, onPlay, onStop, isPlaying, highlightedLine, t
   function handleEditKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Enter') commitEdit()
     if (e.key === 'Escape') setEditingLine(null)
+  }
+
+  function handleCharTouchStart(
+    e: React.TouchEvent,
+    lineIndex: number,
+    charIndex: number,
+    char: string,
+  ) {
+    longPressFiredRef.current = false
+    longPressTimerRef.current = setTimeout(() => {
+      longPressFiredRef.current = true
+      const existing = poem.charAnnotations?.find(
+        (a) => a.lineIndex === lineIndex && a.charIndex === charIndex
+      )
+      setAnnotationTarget({ lineIndex, charIndex, char, existing })
+      setAnnotPinyin(existing?.pinyin ?? '')
+      setAnnotSubstitute(existing?.substitute ?? '')
+    }, 500)
+  }
+
+  function handleCharTouchEnd(e: React.TouchEvent) {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current)
+      longPressTimerRef.current = null
+    }
+    if (longPressFiredRef.current) {
+      e.preventDefault()
+    }
   }
 
   return (
@@ -193,14 +233,19 @@ export function PoemPlayer({ poem, onPlay, onStop, isPlaying, highlightedLine, t
                 const annotation = poem.charAnnotations?.find(
                   (a) => a.lineIndex === line.sourceLineIndex && a.charIndex === sourceCharIndex
                 )
+                const touchHandlers = {
+                  onTouchStart: (e: React.TouchEvent) =>
+                    handleCharTouchStart(e, line.sourceLineIndex, sourceCharIndex, char),
+                  onTouchEnd: handleCharTouchEnd,
+                }
                 if (annotation) {
                   return (
-                    <ruby key={charOffset}>
+                    <ruby key={charOffset} {...touchHandlers}>
                       {char}<rt>{annotation.pinyin}</rt>
                     </ruby>
                   )
                 }
-                return <span key={charOffset}>{char}</span>
+                return <span key={charOffset} {...touchHandlers}>{char}</span>
               })}
             </p>
           )
@@ -262,6 +307,36 @@ export function PoemPlayer({ poem, onPlay, onStop, isPlaying, highlightedLine, t
       {poem.authorBackground && (
         <div className="author-background">
           <p>{poem.authorBackground}</p>
+        </div>
+      )}
+      {annotationTarget && (
+        <div className="annotation-popup" onClick={(e) => e.stopPropagation()}>
+          <div className="annotation-char">{annotationTarget.char}</div>
+          <div className="annotation-fields">
+            <input
+              placeholder="拼音 (e.g. huán)"
+              value={annotPinyin}
+              onChange={(e) => setAnnotPinyin(e.target.value)}
+            />
+            <input
+              placeholder="替换字 (e.g. 环)"
+              value={annotSubstitute}
+              onChange={(e) => setAnnotSubstitute(e.target.value)}
+            />
+          </div>
+          <div className="annotation-buttons">
+            <button onClick={() => {
+              onCharAnnotate?.(annotationTarget.lineIndex, annotationTarget.charIndex, annotPinyin.trim(), annotSubstitute.trim())
+              setAnnotationTarget(null)
+            }}>保存</button>
+            {annotationTarget.existing && (
+              <button onClick={() => {
+                onCharAnnotateRemove?.(annotationTarget.lineIndex, annotationTarget.charIndex)
+                setAnnotationTarget(null)
+              }}>删除</button>
+            )}
+            <button onClick={() => setAnnotationTarget(null)}>取消</button>
+          </div>
         </div>
       )}
     </div>
