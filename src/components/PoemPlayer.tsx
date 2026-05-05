@@ -146,7 +146,6 @@ export function PoemPlayer({ poem, onPlay, onStop, isPlaying, highlightedLine, t
   }
 
   function handleCharTouchStart(
-    e: React.TouchEvent,
     lineIndex: number,
     charIndex: number,
     char: string,
@@ -248,8 +247,8 @@ export function PoemPlayer({ poem, onPlay, onStop, isPlaying, highlightedLine, t
                   (a) => a.lineIndex === line.sourceLineIndex && a.charIndex === sourceCharIndex
                 )
                 const touchHandlers = {
-                  onTouchStart: (e: React.TouchEvent) =>
-                    handleCharTouchStart(e, line.sourceLineIndex, sourceCharIndex, char),
+                  onTouchStart: () =>
+                    handleCharTouchStart(line.sourceLineIndex, sourceCharIndex, char),
                   onTouchEnd: handleCharTouchEnd,
                 }
                 if (annotation) {
