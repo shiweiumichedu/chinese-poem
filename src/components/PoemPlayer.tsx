@@ -232,15 +232,20 @@ export function PoemPlayer({ poem, onPlay, onStop, isPlaying, highlightedLine, t
           }
 
           const isBoldLine = poem.boldLines?.includes(line.sourceLineIndex) ?? false
+          const handleLineAction = () => {
+            if (longPressFiredRef.current) return
+            onSpeakLine?.(line.sourceLineIndex)
+            startEdit(line.sourceLineIndex)
+          }
+          const handleCharClick = (e: React.MouseEvent) => {
+            e.stopPropagation()
+            handleLineAction()
+          }
           return (
             <p
               key={`${line.sourceLineIndex}-${i}`}
               className={`poem-line${line.sourceLineIndex === displayHighlight ? ' highlighted' : ''}${isBoldLine ? ' bold' : ''}${onLineEdit && !isPlaying ? ' editable' : ''}`}
-              onClick={() => {
-                if (longPressFiredRef.current) return
-                onSpeakLine?.(line.sourceLineIndex)
-                startEdit(line.sourceLineIndex)
-              }}
+              onClick={handleLineAction}
             >
               {Array.from(line.text).map((char, charOffset) => {
                 const sourceCharIndex = line.sourceCharOffset + charOffset
@@ -254,12 +259,12 @@ export function PoemPlayer({ poem, onPlay, onStop, isPlaying, highlightedLine, t
                 }
                 if (annotation) {
                   return (
-                    <ruby key={charOffset} {...touchHandlers}>
+                    <ruby key={charOffset} {...touchHandlers} onClick={handleCharClick}>
                       {char}<rt>{annotation.pinyin}</rt>
                     </ruby>
                   )
                 }
-                return <span key={charOffset} {...touchHandlers}>{char}</span>
+                return <span key={charOffset} {...touchHandlers} onClick={handleCharClick}>{char}</span>
               })}
             </p>
           )
