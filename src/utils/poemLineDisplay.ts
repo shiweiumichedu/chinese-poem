@@ -23,9 +23,8 @@ export function buildDisplayLines(lines: string[]): DisplayLine[] {
       return [{ text: line, sourceLineIndex, sourceCharOffset: 0 }]
     }
 
-    // Split lines that have internal punctuation creating multiple clauses,
-    // but only when the total line has enough characters (七言诗 or longer).
-    // Five-character verse (五言诗) produces a single clause with no split.
+    // Lines with fewer than 7 Chinese characters are not split even when punctuated,
+    // preserving 五言诗 as a single display unit.
     if (clauses.length > 1 && countChineseChars(line) >= 7) {
       let searchFrom = 0
       return clauses.map((text) => {

@@ -22,6 +22,12 @@ describe('buildDisplayLines', () => {
     const lines = ['余幼时即嗜学']
     const result = buildDisplayLines(lines)
     expect(result).toHaveLength(1)
-    expect(result[0].sourceCharOffset).toBe(0)
+    expect(result[0]).toEqual({ text: '余幼时即嗜学', sourceLineIndex: 0, sourceCharOffset: 0 })
+  })
+
+  it('does not split a short punctuated line with fewer than 7 Chinese chars', () => {
+    const result = buildDisplayLines(['山高，水长'])
+    expect(result).toHaveLength(1)
+    expect(result[0]).toEqual({ text: '山高，水长', sourceLineIndex: 0, sourceCharOffset: 0 })
   })
 })
