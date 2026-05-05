@@ -41,6 +41,9 @@ function loadPoem() {
 }
 
 describe('ListenTab char annotation', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+  afterEach(() => { vi.useRealTimers() })
+
   it('saves new annotation to library when onCharAnnotate fires', async () => {
     const onPoemUpdated = vi.fn().mockResolvedValue(undefined)
     render(<ListenTab {...makeProps({ onPoemUpdated })} />)
