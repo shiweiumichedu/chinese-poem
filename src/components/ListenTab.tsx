@@ -7,6 +7,7 @@ import { PoemPlayer } from './PoemPlayer'
 import { PoemSearchModal } from './PoemSearchModal'
 import { findPoemOnline, searchResultToSavedPoem, type SearchResult } from '../utils/findPoemOnline'
 import { getDisplaySentences } from '../utils/poemLineDisplay'
+import { buildTtsLine } from '../utils/charAnnotation'
 import { Converter } from 'opencc-js/t2cn'
 import { pinyin } from 'pinyin-pro'
 
@@ -146,7 +147,11 @@ export function ListenTab({
       if (!current) return
       setTimeout(() => {
         if (manuallyStoppedRef.current) return
-        speakLines(current.lines, (i) => setHighlightedLine(i), handlePoemDone)
+        speakLines(
+          current.lines.map((l, i) => buildTtsLine(l, i, current.charAnnotations ?? [])),
+          (i) => setHighlightedLine(i),
+          handlePoemDone,
+        )
       }, 800)
       return
     }
@@ -177,7 +182,11 @@ export function ListenTab({
         const pauseMs = AUTHOR_PAUSE_BASE_MS * getAuthorPauseMultiplier(ttsRate)
         setTimeout(() => {
           if (!autoPlayRef.current || manuallyStoppedRef.current) return
-          speakLines(next.lines, (i) => setHighlightedLine(i), handlePoemDone)
+          speakLines(
+            next.lines.map((l, i) => buildTtsLine(l, i, next.charAnnotations ?? [])),
+            (i) => setHighlightedLine(i),
+            handlePoemDone,
+          )
         }, pauseMs)
       })
     }, 800)
@@ -347,7 +356,9 @@ export function ListenTab({
       }
       hasRepeatRef.current = true
       speakLines(['重复'], () => setHighlightedLine(null), () => {
-        speakLines([expected], () => setHighlightedLine(null), () => {
+        const ttsSourceLines = poem.lines.map((l, i) => buildTtsLine(l, i, poem.charAnnotations ?? []))
+        const ttsExpected = getDisplaySentences(ttsSourceLines)[sentenceIndex]
+        speakLines([ttsExpected ?? expected], () => setHighlightedLine(null), () => {
           listenForCorrection(sentenceIndex)
         })
       })
@@ -391,7 +402,11 @@ export function ListenTab({
       setNotFound(false)
       setSearchMatches(null)
       setPoem(results[0])
-      speakLines(results[0].lines, (i) => setHighlightedLine(i), handlePoemDone)
+      speakLines(
+        results[0].lines.map((l, i) => buildTtsLine(l, i, results[0].charAnnotations ?? [])),
+        (i) => setHighlightedLine(i),
+        handlePoemDone,
+      )
     } else {
       setNotFound(false)
       setSearchMatches(results)
@@ -401,7 +416,11 @@ export function ListenTab({
   function handlePickMatch(match: SavedPoem) {
     setSearchMatches(null)
     setPoem(match)
-    speakLines(match.lines, (i) => setHighlightedLine(i), handlePoemDone)
+    speakLines(
+      match.lines.map((l, i) => buildTtsLine(l, i, match.charAnnotations ?? [])),
+      (i) => setHighlightedLine(i),
+      handlePoemDone,
+    )
   }
 
   async function handleLineEdit(lineIndex: number, newText: string) {
@@ -422,6 +441,27 @@ export function ListenTab({
     const isBold = current.includes(lineIndex)
     const boldLines = isBold ? current.filter((i) => i !== lineIndex) : [...current, lineIndex]
     const updated: SavedPoem = { ...currentPoem, boldLines }
+    setPoem(updated)
+    await savePoem(updated)
+    await onPoemUpdated()
+  }
+
+  async function handleCharAnnotate(lineIndex: number, charIndex: number, pinyin: string, substitute: string) {
+    if (!currentPoem) return
+    const existing = currentPoem.charAnnotations ?? []
+    const filtered = existing.filter((a) => !(a.lineIndex === lineIndex && a.charIndex === charIndex))
+    const charAnnotations = [...filtered, { lineIndex, charIndex, pinyin, substitute }]
+    const updated = { ...currentPoem, charAnnotations }
+    setPoem(updated)
+    await savePoem(updated)
+    await onPoemUpdated()
+  }
+
+  async function handleCharAnnotateRemove(lineIndex: number, charIndex: number) {
+    if (!currentPoem) return
+    const charAnnotations = (currentPoem.charAnnotations ?? [])
+      .filter((a) => !(a.lineIndex === lineIndex && a.charIndex === charIndex))
+    const updated = { ...currentPoem, charAnnotations }
     setPoem(updated)
     await savePoem(updated)
     await onPoemUpdated()
@@ -624,8 +664,9 @@ export function ListenTab({
           poem={currentPoem}
           onPlay={(lines, onLineStart, onDone) => {
             stopRecitingSession()
+            const ttsLines = lines.map((l, idx) => buildTtsLine(l, idx, currentPoem.charAnnotations ?? []))
             speakLines(
-              lines,
+              ttsLines,
               (i) => { setHighlightedLine(i); onLineStart(i) },
               () => { onDone(); setHighlightedLine(null); handlePoemDone() },
             )
@@ -637,7 +678,11 @@ export function ListenTab({
           setTtsRate={setTtsRate}
           onLineEdit={handleLineEdit}
           onLineBoldToggle={handleLineBoldToggle}
-          onSpeakLine={(lineIndex) => { stop(); speakLines([currentPoem.lines[lineIndex]], () => {}, () => {}) }}
+          onSpeakLine={(lineIndex) => {
+            stop()
+            const ttsText = buildTtsLine(currentPoem.lines[lineIndex], lineIndex, currentPoem.charAnnotations ?? [])
+            speakLines([ttsText], () => {}, () => {})
+          }}
           autoPlay={autoPlay}
           onAutoPlayToggle={toggleAutoPlay}
           reciting={reciting}
@@ -646,6 +691,8 @@ export function ListenTab({
           onRepeatPlayToggle={toggleRepeatPlay}
           nextPoem={autoPlay && !repeatPlay ? getNextPoem() : null}
           onNextPoem={handleJumpToNext}
+          onCharAnnotate={handleCharAnnotate}
+          onCharAnnotateRemove={handleCharAnnotateRemove}
         />
       )}
     </div>
