@@ -85,7 +85,7 @@ describe('ListenTab', () => {
 
     expect(screen.getAllByText('静夜思').length).toBeGreaterThan(0)
     expect(screen.getByText('李白 · 唐')).toBeInTheDocument()
-    expect(screen.getByText('床前明月光')).toBeInTheDocument()
+    expect(screen.getByText('床')).toBeInTheDocument()
     expect(speakLines).toHaveBeenCalledWith(
       poem.lines,
       expect.any(Function),
@@ -124,6 +124,27 @@ describe('ListenTab', () => {
     expect(lines[0]).not.toHaveClass('highlighted')
   })
 
+  it('highlights poem line when 朗读 button fires onLineStart', () => {
+    const speakLines = vi.fn()
+    const props = makeProps({ isSTTSupported: false, speakLines, libraryPoems: [poem] })
+    const { container } = render(<ListenTab {...props} />)
+
+    // Load poem via text search (speakLines call 0)
+    const input = screen.getByPlaceholderText('输入诗名或诗句...')
+    fireEvent.change(input, { target: { value: '静夜思' } })
+    fireEvent.keyDown(screen.getByPlaceholderText('输入诗名或诗句...'), { key: 'Enter' })
+
+    // Click 朗读 (speakLines call 1) — capture its onLineStart
+    fireEvent.click(screen.getByRole('button', { name: '朗读' }))
+    const onLineStart = speakLines.mock.calls[1][1] as (i: number) => void
+
+    act(() => onLineStart(2))
+
+    const lines = container.querySelectorAll('.poem-line')
+    expect(lines[2]).toHaveClass('highlighted')
+    expect(lines[0]).not.toHaveClass('highlighted')
+  })
+
   it('clears highlight when onDone fires', () => {
     let capturedOnResult: ((text: string) => void) | null = null
     let capturedOnLineStart: ((i: number) => void) | null = null
@@ -155,7 +176,7 @@ describe('ListenTab', () => {
     render(<ListenTab {...props} />)
 
     expect(screen.getAllByText('静夜思').length).toBeGreaterThan(0)
-    expect(screen.getByText('床前明月光')).toBeInTheDocument()
+    expect(screen.getByText('床')).toBeInTheDocument()
     expect(speakLines).not.toHaveBeenCalled()
   })
 
@@ -164,7 +185,6 @@ describe('ListenTab', () => {
     render(<ListenTab {...props} />)
     expect(screen.queryByRole('button', { name: '开始语音搜索' })).not.toBeInTheDocument()
     expect(screen.getByPlaceholderText('输入诗名或诗句...')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '搜索' })).toBeInTheDocument()
   })
 
   it('searches via text input and shows poem', () => {
@@ -174,10 +194,10 @@ describe('ListenTab', () => {
     render(<ListenTab {...props} />)
     const input = screen.getByPlaceholderText('输入诗名或诗句...')
     fireEvent.change(input, { target: { value: '静夜思' } })
-    fireEvent.click(screen.getByRole('button', { name: '搜索' }))
+    fireEvent.keyDown(screen.getByPlaceholderText('输入诗名或诗句...'), { key: 'Enter' })
 
     expect(screen.getAllByText('静夜思').length).toBeGreaterThan(0)
-    expect(screen.getByText('床前明月光')).toBeInTheDocument()
+    expect(screen.getByText('床')).toBeInTheDocument()
     expect(speakLines).toHaveBeenCalledWith(
       poem.lines,
       expect.any(Function),
@@ -195,11 +215,89 @@ describe('ListenTab', () => {
     fireEvent.keyDown(input, { key: 'Enter' })
 
     expect(screen.getAllByText('静夜思').length).toBeGreaterThan(0)
-    expect(screen.getByText('床前明月光')).toBeInTheDocument()
+    expect(screen.getByText('床')).toBeInTheDocument()
     expect(speakLines).toHaveBeenCalledWith(
       poem.lines,
       expect.any(Function),
       expect.any(Function)
     )
+  })
+})
+
+const poem2: SavedPoem = {
+  id: '2',
+  title: '静夜思二',
+  author: '测试',
+  dynasty: 'tang',
+  authorBackground: '',
+  lines: ['测试诗句一', '测试诗句二', '测试诗句三', '测试诗句四'],
+  addedAt: 1,
+}
+
+describe('ListenTab multi-match picker', () => {
+  it('shows inline picker when search returns multiple matches', () => {
+    const props = makeProps({ isSTTSupported: false, libraryPoems: [poem, poem2] })
+    render(<ListenTab {...props} />)
+
+    const input = screen.getByPlaceholderText('输入诗名或诗句...')
+    fireEvent.change(input, { target: { value: '静夜思' } })
+    fireEvent.keyDown(screen.getByPlaceholderText('输入诗名或诗句...'), { key: 'Enter' })
+
+    expect(screen.getByText('静夜思 — 李白')).toBeInTheDocument()
+    expect(screen.getByText('静夜思二 — 测试')).toBeInTheDocument()
+  })
+
+  it('does not auto-load when multiple matches', () => {
+    const speakLines = vi.fn()
+    const props = makeProps({ isSTTSupported: false, speakLines, libraryPoems: [poem, poem2] })
+    render(<ListenTab {...props} />)
+
+    const input = screen.getByPlaceholderText('输入诗名或诗句...')
+    fireEvent.change(input, { target: { value: '静夜思' } })
+    fireEvent.keyDown(screen.getByPlaceholderText('输入诗名或诗句...'), { key: 'Enter' })
+
+    expect(speakLines).not.toHaveBeenCalled()
+  })
+
+  it('loads selected poem and hides picker when item clicked', () => {
+    const speakLines = vi.fn()
+    const props = makeProps({ isSTTSupported: false, speakLines, libraryPoems: [poem, poem2] })
+    render(<ListenTab {...props} />)
+
+    const input = screen.getByPlaceholderText('输入诗名或诗句...')
+    fireEvent.change(input, { target: { value: '静夜思' } })
+    fireEvent.keyDown(screen.getByPlaceholderText('输入诗名或诗句...'), { key: 'Enter' })
+    fireEvent.click(screen.getByText('静夜思二 — 测试'))
+
+    expect(screen.queryByText('静夜思 — 李白')).not.toBeInTheDocument()
+    expect(speakLines).toHaveBeenCalledWith(poem2.lines, expect.any(Function), expect.any(Function))
+  })
+
+  it('still auto-loads when exactly one match', () => {
+    const speakLines = vi.fn()
+    const props = makeProps({ isSTTSupported: false, speakLines, libraryPoems: [poem, poem2] })
+    render(<ListenTab {...props} />)
+
+    const input = screen.getByPlaceholderText('输入诗名或诗句...')
+    fireEvent.change(input, { target: { value: '静夜思二' } })
+    fireEvent.keyDown(screen.getByPlaceholderText('输入诗名或诗句...'), { key: 'Enter' })
+
+    expect(speakLines).toHaveBeenCalledWith(poem2.lines, expect.any(Function), expect.any(Function))
+    expect(screen.queryByText('静夜思二 — 测试')).not.toBeInTheDocument()
+  })
+
+  it('speaks tapped line when a line is clicked', () => {
+    const speakLines = vi.fn()
+    const props = makeProps({ isSTTSupported: false, speakLines, libraryPoems: [poem] })
+    render(<ListenTab {...props} />)
+
+    const input = screen.getByPlaceholderText('输入诗名或诗句...')
+    fireEvent.change(input, { target: { value: '静夜思' } })
+    fireEvent.keyDown(input, { key: 'Enter' })
+
+    speakLines.mockClear()
+    fireEvent.click(screen.getByText('床').closest('p')!)
+
+    expect(speakLines).toHaveBeenCalledWith(['床前明月光'], expect.any(Function), expect.any(Function))
   })
 })

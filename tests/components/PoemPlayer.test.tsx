@@ -32,8 +32,8 @@ describe('PoemPlayer', () => {
 
   it('renders all poem lines', () => {
     render(<PoemPlayer {...defaultProps} />)
-    expect(screen.getByText('床前明月光')).toBeInTheDocument()
-    expect(screen.getByText('低头思故乡')).toBeInTheDocument()
+    expect(screen.getByText('床')).toBeInTheDocument()
+    expect(screen.getByText('乡')).toBeInTheDocument()
   })
 
   it('shows 朗读 button when not playing', () => {
@@ -120,18 +120,36 @@ describe('PoemPlayer', () => {
     })
   })
 
-  it('renders speed preset buttons 慢, 正常, 快', () => {
+  it('renders speed preset buttons 极慢, 较慢, 慢, 正常, 快', () => {
     render(<PoemPlayer {...defaultProps} />)
+    expect(screen.getByRole('button', { name: '极慢' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '较慢' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '慢' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '正常' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '快' })).toBeInTheDocument()
   })
 
   it('marks the active speed preset with aria-pressed="true"', () => {
-    render(<PoemPlayer {...defaultProps} ttsRate={0.7} />)
-    expect(screen.getByRole('button', { name: '慢' })).toHaveAttribute('aria-pressed', 'true')
+    render(<PoemPlayer {...defaultProps} ttsRate={0.25} />)
+    expect(screen.getByRole('button', { name: '极慢' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: '较慢' })).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByRole('button', { name: '慢' })).toHaveAttribute('aria-pressed', 'false')
     expect(screen.getByRole('button', { name: '正常' })).toHaveAttribute('aria-pressed', 'false')
     expect(screen.getByRole('button', { name: '快' })).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it('calls setTtsRate(0.25) when 极慢 is clicked', () => {
+    const setTtsRate = vi.fn()
+    render(<PoemPlayer {...defaultProps} setTtsRate={setTtsRate} />)
+    fireEvent.click(screen.getByRole('button', { name: '极慢' }))
+    expect(setTtsRate).toHaveBeenCalledWith(0.25)
+  })
+
+  it('calls setTtsRate(0.4) when 较慢 is clicked', () => {
+    const setTtsRate = vi.fn()
+    render(<PoemPlayer {...defaultProps} setTtsRate={setTtsRate} />)
+    fireEvent.click(screen.getByRole('button', { name: '较慢' }))
+    expect(setTtsRate).toHaveBeenCalledWith(0.4)
   })
 
   it('calls setTtsRate(0.7) when 慢 is clicked', () => {
@@ -147,4 +165,63 @@ describe('PoemPlayer', () => {
     fireEvent.click(screen.getByRole('button', { name: '快' }))
     expect(setTtsRate).toHaveBeenCalledWith(1.4)
   })
+
+  it('applies bold class to lines listed in poem.boldLines', () => {
+    render(<PoemPlayer {...defaultProps} poem={{ ...poem, boldLines: [0, 2] }} />)
+    const lines = document.querySelectorAll('.poem-line')
+    expect(lines[0].className).toContain('bold')
+    expect(lines[1].className).not.toContain('bold')
+    expect(lines[2].className).toContain('bold')
+    expect(lines[3].className).not.toContain('bold')
+  })
+
+  it('B button appears in edit mode when onLineBoldToggle is provided', () => {
+    render(<PoemPlayer {...defaultProps} onLineEdit={vi.fn()} onLineBoldToggle={vi.fn()} />)
+    fireEvent.click(screen.getByText('床').closest('p')!)
+    expect(screen.getByRole('button', { name: 'B' })).toBeInTheDocument()
+  })
+
+  it('B button has active class when line being edited is bold', () => {
+    render(
+      <PoemPlayer
+        {...defaultProps}
+        poem={{ ...poem, boldLines: [0] }}
+        onLineEdit={vi.fn()}
+        onLineBoldToggle={vi.fn()}
+      />
+    )
+    fireEvent.click(screen.getByText('床').closest('p')!)
+    expect(screen.getByRole('button', { name: 'B' })).toHaveClass('active')
+  })
+
+  it('calls onSpeakLine with line index when a line is tapped', () => {
+    const onSpeakLine = vi.fn()
+    render(<PoemPlayer {...defaultProps} onSpeakLine={onSpeakLine} />)
+    fireEvent.click(screen.getByText('床').closest('p')!)
+    expect(onSpeakLine).toHaveBeenCalledWith(0)
+  })
+
+  it('renders annotated character as ruby with pinyin above', () => {
+    const poemWithAnnotation = {
+      ...poem,
+      charAnnotations: [{ lineIndex: 0, charIndex: 0, pinyin: 'chuáng', substitute: '床' }],
+    }
+    render(<PoemPlayer {...defaultProps} poem={poemWithAnnotation} />)
+    const ruby = document.querySelector('ruby')
+    expect(ruby).toBeInTheDocument()
+    expect(ruby?.textContent).toContain('床')
+    const rt = document.querySelector('rt')
+    expect(rt?.textContent).toBe('chuáng')
+  })
+
+  it('clicking B calls onLineBoldToggle with line index and exits edit mode', () => {
+    const onLineBoldToggle = vi.fn()
+    render(<PoemPlayer {...defaultProps} onLineEdit={vi.fn()} onLineBoldToggle={onLineBoldToggle} />)
+    fireEvent.click(screen.getByText('床').closest('p')!)
+    fireEvent.mouseDown(screen.getByRole('button', { name: 'B' }))
+    fireEvent.click(screen.getByRole('button', { name: 'B' }))
+    expect(onLineBoldToggle).toHaveBeenCalledWith(0)
+    expect(screen.queryByRole('button', { name: 'B' })).not.toBeInTheDocument()
+  })
+
 })

@@ -39,7 +39,13 @@ function toPinyin(text: string): string {
   return pinyin(text, { toneType: 'none', separator: '' })
 }
 
-function isReciteMatch(recited: string, expected: string): boolean {
+// Collapse 翘舌 (retroflex zh/ch/sh→z/c/s, r→y) and 鼻音 is already
+// handled by substring inclusion (ng-final always contains n-final).
+function normalizeAccent(p: string): string {
+  return p.replace(/zh/g, 'z').replace(/ch/g, 'c').replace(/sh/g, 's').replace(/r/g, 'y')
+}
+
+export function isReciteMatch(recited: string, expected: string): boolean {
   const normalizedRecited = normalizeReciteText(recited)
   const normalizedExpected = normalizeReciteText(expected)
   if (
@@ -48,9 +54,9 @@ function isReciteMatch(recited: string, expected: string): boolean {
     normalizedExpected.includes(normalizedRecited)
   ) return true
 
-  // Phonetic fallback: homophones count as correct
-  const pinyinRecited = toPinyin(normalizedRecited)
-  const pinyinExpected = toPinyin(normalizedExpected)
+  // Phonetic fallback: homophones and accent variants count as correct
+  const pinyinRecited = normalizeAccent(toPinyin(normalizedRecited))
+  const pinyinExpected = normalizeAccent(toPinyin(normalizedExpected))
   return (
     pinyinRecited === pinyinExpected ||
     pinyinRecited.includes(pinyinExpected) ||
@@ -96,7 +102,8 @@ export function ListenTab({
   const [reciting, setReciting] = useState(false)
   const [reciteSentenceIndex, setReciteSentenceIndex] = useState(0)
   const [recognizedText, setRecognizedText] = useState('')
-  
+  const [searchMatches, setSearchMatches] = useState<SavedPoem[] | null>(null)
+
   // Online search modal state
   const [showSearchModal, setShowSearchModal] = useState(false)
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
@@ -112,6 +119,7 @@ export function ListenTab({
   const recitingRef = useRef(false)
   const hasWrongAnswerRef = useRef(false)
   const hasRepeatRef = useRef(false)
+  const reciteSessionRatingRef = useRef<number | undefined>(undefined)
 
   useEffect(() => { autoPlayRef.current = autoPlay }, [autoPlay])
   useEffect(() => { repeatPlayRef.current = repeatPlay }, [repeatPlay])
@@ -215,9 +223,10 @@ export function ListenTab({
   }
 
   function handleReciteComplete() {
+    const sessionRating = reciteSessionRatingRef.current
     stopRecitingSession()
     if (!autoPlayRef.current) return
-    const next = getNextPoem()
+    const next = getNextPoem(sessionRating)
     if (!next) return
     speakLines([`${next.title}，${next.author}`], () => setHighlightedLine(null), () => {
       if (!autoPlayRef.current || manuallyStoppedRef.current) return
@@ -353,6 +362,7 @@ export function ListenTab({
     stop()
     hasWrongAnswerRef.current = false
     hasRepeatRef.current = false
+    reciteSessionRatingRef.current = poem.rating
     setHighlightedLine(null)
     setReciting(true)
     recitingRef.current = true
@@ -373,15 +383,25 @@ export function ListenTab({
 
   function handleSearch(query: string) {
     stopRecitingSession()
-    const results = searchPoems(libraryPoems, query)
-    if (results.length > 0) {
-      const found = results[0] as SavedPoem
-      setPoem(found)
-      setNotFound(false)
-      speakLines(found.lines, (i) => setHighlightedLine(i), handlePoemDone)
-    } else {
+    const results = searchPoems(libraryPoems, query) as SavedPoem[]
+    if (results.length === 0) {
       setNotFound(true)
+      setSearchMatches(null)
+    } else if (results.length === 1) {
+      setNotFound(false)
+      setSearchMatches(null)
+      setPoem(results[0])
+      speakLines(results[0].lines, (i) => setHighlightedLine(i), handlePoemDone)
+    } else {
+      setNotFound(false)
+      setSearchMatches(results)
     }
+  }
+
+  function handlePickMatch(match: SavedPoem) {
+    setSearchMatches(null)
+    setPoem(match)
+    speakLines(match.lines, (i) => setHighlightedLine(i), handlePoemDone)
   }
 
   async function handleLineEdit(lineIndex: number, newText: string) {
@@ -392,6 +412,17 @@ export function ListenTab({
     }
     setPoem(updated)
     if (recitingRef.current) stopRecitingSession()
+    await savePoem(updated)
+    await onPoemUpdated()
+  }
+
+  async function handleLineBoldToggle(lineIndex: number) {
+    if (!currentPoem) return
+    const current = currentPoem.boldLines ?? []
+    const isBold = current.includes(lineIndex)
+    const boldLines = isBold ? current.filter((i) => i !== lineIndex) : [...current, lineIndex]
+    const updated: SavedPoem = { ...currentPoem, boldLines }
+    setPoem(updated)
     await savePoem(updated)
     await onPoemUpdated()
   }
@@ -434,12 +465,12 @@ export function ListenTab({
     setPoem(next)
   }
 
-  function getNextPoem(): SavedPoem | null {
+  function getNextPoem(ratingOverride?: number): SavedPoem | null {
     const current = currentPoemRef.current
     if (!current) return null
     const poems = libraryPoemsRef.current
 
-    const targetRating = current.rating
+    const targetRating = ratingOverride !== undefined ? ratingOverride : current.rating
     let availablePoems = targetRating !== undefined
       ? poems.filter(p => p.rating === targetRating)
       : poems
@@ -525,6 +556,15 @@ export function ListenTab({
       )}
 
       <div className="text-search">
+        {currentPoem && (
+          <button
+            className="btn-back"
+            aria-label="返回"
+            onClick={() => { setCurrentPoem(null); stopRecitingSession(); stop() }}
+          >
+            ←
+          </button>
+        )}
         <input
           type="text"
           placeholder="输入诗名或诗句..."
@@ -543,8 +583,19 @@ export function ListenTab({
             {voiceState === 'listening' ? '🎙️' : '🎤'}
           </button>
         )}
-        <button onClick={handleTextSearch}>搜索</button>
       </div>
+
+      {searchMatches && (
+        <ul className="search-matches">
+          {searchMatches.map((m) => (
+            <li key={m.id}>
+              <button onClick={() => handlePickMatch(m)}>
+                {m.title} — {m.author}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
 
       {notFound && textQuery.trim() && (
         <div className="online-search-wrap">
@@ -573,15 +624,20 @@ export function ListenTab({
           poem={currentPoem}
           onPlay={(lines, onLineStart, onDone) => {
             stopRecitingSession()
-            speakLines(lines, onLineStart, () => { onDone(); handlePoemDone() })
+            speakLines(
+              lines,
+              (i) => { setHighlightedLine(i); onLineStart(i) },
+              () => { onDone(); setHighlightedLine(null); handlePoemDone() },
+            )
           }}
           onStop={() => { manuallyStoppedRef.current = true; stopRecitingSession(); stop() }}
-          onBack={() => { setCurrentPoem(null); stopRecitingSession(); stop() }}
           isPlaying={voiceState !== 'idle' || reciting}
           highlightedLine={highlightedLine}
           ttsRate={ttsRate}
           setTtsRate={setTtsRate}
           onLineEdit={handleLineEdit}
+          onLineBoldToggle={handleLineBoldToggle}
+          onSpeakLine={(lineIndex) => { stop(); speakLines([currentPoem.lines[lineIndex]], () => {}, () => {}) }}
           autoPlay={autoPlay}
           onAutoPlayToggle={toggleAutoPlay}
           reciting={reciting}
