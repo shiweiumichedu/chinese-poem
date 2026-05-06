@@ -114,12 +114,6 @@ export function LibraryTab({
     })
   }
 
-  function handleTextKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Enter') {
-      handleAddByText()
-    }
-  }
-
   async function handleDelete(poem: SavedPoem) {
     await removePoem(poem.id)
     await onPoemAdded()
@@ -230,15 +224,6 @@ export function LibraryTab({
               <p>正在加载诗库...</p>
             ) : (
               <div className="add-text-input">
-                <input
-                  type="text"
-                  placeholder="输入诗名或诗句..."
-                  aria-label="诗名或诗句"
-                  lang="zh-CN"
-                  value={addTextQuery}
-                  onChange={(e) => setAddTextQuery(e.target.value)}
-                  onKeyDown={handleTextKeyDown}
-                />
                 {isSTTSupported && (
                   <button
                     className={`btn-voice-search${voiceState === 'listening' ? ' active' : ''}`}

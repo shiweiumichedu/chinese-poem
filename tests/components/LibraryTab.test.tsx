@@ -145,29 +145,6 @@ describe('LibraryTab', () => {
     expect(screen.queryByRole('button', { name: '确认添加' })).not.toBeInTheDocument()
   })
 
-  it('shows text input fallback when isSTTSupported is false', () => {
-    render(<LibraryTab {...makeProps({ isSTTSupported: false })} />)
-    expect(screen.queryByRole('button', { name: '开始语音添加' })).not.toBeInTheDocument()
-    expect(screen.getByPlaceholderText('输入诗名或诗句...')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '查找' })).toBeInTheDocument()
-  })
-
-  it('text input search finds poem and shows preview', () => {
-    render(<LibraryTab {...makeProps({ isSTTSupported: false })} />)
-    const input = screen.getByPlaceholderText('输入诗名或诗句...')
-    fireEvent.change(input, { target: { value: '静夜思' } })
-    fireEvent.click(screen.getByRole('button', { name: '查找' }))
-    expect(screen.getByRole('button', { name: '确认添加' })).toBeInTheDocument()
-  })
-
-  it('text input Enter key triggers search', () => {
-    render(<LibraryTab {...makeProps({ isSTTSupported: false })} />)
-    const input = screen.getByPlaceholderText('输入诗名或诗句...')
-    fireEvent.change(input, { target: { value: '静夜思' } })
-    fireEvent.keyDown(input, { key: 'Enter' })
-    expect(screen.getByRole('button', { name: '确认添加' })).toBeInTheDocument()
-  })
-
   // ── Sub-tab navigation ──
 
   it('renders 我的诗库 and 浏览诗库 sub-tab buttons', () => {
