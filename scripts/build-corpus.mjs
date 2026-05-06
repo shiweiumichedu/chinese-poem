@@ -1,5 +1,6 @@
 // scripts/build-corpus.mjs
 import { writeFileSync, mkdirSync, statSync } from 'fs'
+import * as opencc from 'opencc-js'
 
 const RAW_BASE = 'https://raw.githubusercontent.com/chinese-poetry/chinese-poetry/master'
 
@@ -33,8 +34,8 @@ async function loadPoemFiles(urlPattern, dynasty, maxFileIndex, maxPoems) {
         if (!p.title || !p.paragraphs?.length) continue
         poems.push({
           id: p.id || `${dynasty}-${poems.length}`,
-          title: p.title.trim(),
-          author: (p.author || '').trim(),
+          title: t2s(p.title.trim()),
+          author: t2s((p.author || '').trim()),
           dynasty,
           authorBackground: '',
           lines: p.paragraphs.map(l => l.trim()).filter(Boolean),
@@ -51,6 +52,8 @@ async function loadPoemFiles(urlPattern, dynasty, maxFileIndex, maxPoems) {
   console.log()
   return poems
 }
+
+const t2s = opencc.Converter({ from: 'hk', to: 'cn' })
 
 async function main() {
   // Both Tang and Song poems (诗) live in 全唐诗/ (URL-encoded as %E5%85%A8%E5%94%90%E8%AF%97)
@@ -69,7 +72,7 @@ async function main() {
     `${TANG_DIR}/poet.tang.\${N}.json`,
     'tang',
     57000,
-    15000
+    60000
   )
 
   // Song shi (诗) poems are in the same 全唐诗/ directory as Tang poems
@@ -78,7 +81,7 @@ async function main() {
     `${TANG_DIR}/poet.song.\${N}.json`,
     'song',
     254000,
-    15000
+    40000
   )
 
   const corpus = [...tangPoems, ...songPoems]
@@ -107,13 +110,14 @@ async function main() {
 
   const corpusSizeBytes = statSync('public/corpus.json').size
   const corpusSizeMB = (corpusSizeBytes / 1024 / 1024).toFixed(2)
-  console.log(`Written to public/corpus.json (${corpusSizeMB} MB)`)
+  const corpusSizeCompressedMB = (corpusSizeBytes * 0.33 / 1024 / 1024).toFixed(2) // ~33% after gzip
+  console.log(`Written to public/corpus.json (${corpusSizeMB} MB uncompressed, ~${corpusSizeCompressedMB} MB gzipped)`)
 
-  if (corpusSizeBytes > 9.5 * 1024 * 1024) {
-    console.warn(`WARNING: corpus.json is ${corpusSizeMB}MB, approaching 10MB design target`)
+  if (corpusSizeBytes > 25 * 1024 * 1024) {
+    console.warn(`WARNING: corpus.json is ${corpusSizeMB}MB, may impact service worker caching`)
   }
-  if (corpusSizeBytes > 14 * 1024 * 1024) {
-    console.error(`ERROR: corpus.json is ${corpusSizeMB}MB, exceeds 14MB Workbox hard limit — aborting`)
+  if (corpusSizeBytes > 40 * 1024 * 1024) {
+    console.error(`ERROR: corpus.json is ${corpusSizeMB}MB, exceeds 40MB limit — aborting`)
     process.exit(1)
   }
 }

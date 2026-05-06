@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useVoiceController } from './hooks/useVoiceController'
 import { useCorpus } from './hooks/useCorpus'
-import { listPoems } from './data/PoemLibrary'
+import { listPoems, savePoem } from './data/PoemLibrary'
+import { getMissingSeeds, SEED_POEMS } from './data/seedPoems'
 import { ListenTab } from './components/ListenTab'
 import { LibraryTab } from './components/LibraryTab'
 import type { AppTab, SavedPoem } from './types'
@@ -16,7 +17,16 @@ function App() {
   const sttSupported = isSTTSupported()
 
   useEffect(() => {
-    listPoems().then(setLibraryPoems)
+    listPoems().then(async (poems) => {
+      const missing = getMissingSeeds(poems, SEED_POEMS)
+      if (missing.length > 0) {
+        const now = Date.now()
+        await Promise.all(missing.map((p, i) => savePoem({ ...p, addedAt: now + i })))
+        setLibraryPoems(await listPoems())
+      } else {
+        setLibraryPoems(poems)
+      }
+    })
   }, [])
 
   function handlePoemSelect(poem: SavedPoem) {
@@ -52,6 +62,7 @@ function App() {
             initialPoem={selectedPoem}
             ttsRate={ttsRate}
             setTtsRate={setTtsRate}
+            onPoemUpdated={handlePoemAdded}
           />
         ) : (
           <LibraryTab

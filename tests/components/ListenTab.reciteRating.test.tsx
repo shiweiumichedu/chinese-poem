@@ -52,7 +52,7 @@ function loadPoem(
 
   const input = screen.getByPlaceholderText('输入诗名或诗句...')
   fireEvent.change(input, { target: { value: '静夜思' } })
-  fireEvent.click(screen.getByRole('button', { name: '搜索' }))
+  fireEvent.keyDown(screen.getByPlaceholderText('输入诗名或诗句...'), { key: 'Enter' })
   // speakLines[0] = poem.lines (from handleSearch)
 
   return { speakLinesDones, startListeningCallbacks }
@@ -78,9 +78,47 @@ function drivePerfectRecitation(
   // advanceReciteSentence(4) fires → end of session → speakLines[5]='要不要加颗星' (when feature is active)
 }
 
+const poem4b: SavedPoem = {
+  id: '2',
+  title: '春晓',
+  author: '孟浩然',
+  dynasty: 'tang',
+  authorBackground: '',
+  lines: ['春眠不觉晓', '处处闻啼鸟', '夜来风雨声', '花落知多少'],
+  addedAt: 1,
+  rating: 4,
+}
+
+const poem5: SavedPoem = {
+  id: '3',
+  title: '登鹳雀楼',
+  author: '王之涣',
+  dynasty: 'tang',
+  authorBackground: '',
+  lines: ['白日依山尽', '黄河入海流', '欲穷千里目', '更上一层楼'],
+  addedAt: 2,
+  rating: 5,
+}
+
+const poem3: SavedPoem = {
+  id: '4',
+  title: '悯农',
+  author: '李绅',
+  dynasty: 'tang',
+  authorBackground: '',
+  lines: ['锄禾日当午', '汗滴禾下土', '谁知盘中餐', '粒粒皆辛苦'],
+  addedAt: 3,
+  rating: 3,
+}
+
 describe('ListenTab recitation rating upgrade', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    localStorage.clear()
+  })
+
+  afterEach(() => {
+    localStorage.clear()
   })
 
   it('offers 要不要加颗星 after perfect recitation when rating < 5', () => {
@@ -173,5 +211,96 @@ describe('ListenTab recitation rating upgrade', () => {
 
     const spoken = speakLines.mock.calls.map((c: unknown[]) => c[0])
     expect(spoken).not.toContainEqual(['要不要加颗星？'])
+  })
+
+  it('after rating upgrade, continues in the original loop (next 4-star poem, not 5-star)', () => {
+    localStorage.setItem('auto-play', 'true')
+    const poemA = { ...poem, id: '1', rating: 4 }
+    const speakLines = vi.fn()
+    const startListening = vi.fn()
+    render(<ListenTab {...makeProps({
+      speakLines,
+      startListening,
+      libraryPoems: [poemA, poem4b, poem5],
+    })} />)
+
+    const speakLinesDones: (() => void)[] = []
+    const startListeningCallbacks: ((text: string) => void)[] = []
+    speakLines.mockImplementation((_lines: string[], _onLineStart: () => void, onDone: () => void) => {
+      speakLinesDones.push(onDone)
+    })
+    startListening.mockImplementation((onResult: (text: string) => void) => {
+      startListeningCallbacks.push(onResult)
+    })
+
+    const input = screen.getByPlaceholderText('输入诗名或诗句...')
+    fireEvent.change(input, { target: { value: '静夜思' } })
+    fireEvent.keyDown(screen.getByPlaceholderText('输入诗名或诗句...'), { key: 'Enter' })
+    // speakLinesDones[0] = poem lines done (from handleSearch)
+
+    drivePerfectRecitation(speakLinesDones, startListeningCallbacks)
+    // speakLinesDones[5] = 要不要加颗星？ done
+
+    act(() => speakLinesDones[5]())                       // 要不要加颗星 done → startListening[4]
+    act(() => startListeningCallbacks[4]('要'))           // user accepts → setPoem(rating 5) + speakLines[6]=已加一颗星
+    act(() => speakLinesDones[6]())                       // 已加一颗星 done → proceedToComplete → speakLines[7]=背诵完成
+    act(() => speakLinesDones[7]())                       // 背诵完成 done → handleReciteComplete → speakLines[8]=next poem
+
+    const spoken = speakLines.mock.calls.map((c: unknown[]) => c[0])
+    // Must navigate to the next 4-star poem (春晓), not the 5-star poem (登鹳雀楼)
+    expect(spoken).toContainEqual(['春晓，孟浩然'])
+    expect(spoken).not.toContainEqual(['登鹳雀楼，王之涣'])
+  })
+
+  it('after rating downgrade, continues in the original loop (next 4-star poem, not 3-star)', () => {
+    localStorage.setItem('auto-play', 'true')
+    const poemA = { ...poem, id: '1', rating: 4 }
+    const sentences = poemA.lines
+    const speakLines = vi.fn()
+    const startListening = vi.fn()
+    render(<ListenTab {...makeProps({
+      speakLines,
+      startListening,
+      libraryPoems: [poemA, poem4b, poem3],
+    })} />)
+
+    const speakLinesDones: (() => void)[] = []
+    const startListeningCallbacks: ((text: string) => void)[] = []
+    speakLines.mockImplementation((_lines: string[], _onLineStart: () => void, onDone: () => void) => {
+      speakLinesDones.push(onDone)
+    })
+    startListening.mockImplementation((onResult: (text: string) => void) => {
+      startListeningCallbacks.push(onResult)
+    })
+
+    const input = screen.getByPlaceholderText('输入诗名或诗句...')
+    fireEvent.change(input, { target: { value: '静夜思' } })
+    fireEvent.keyDown(screen.getByPlaceholderText('输入诗名或诗句...'), { key: 'Enter' })
+    // speakLinesDones[0] = poem lines done (handleSearch)
+
+    // Drive recitation: sentence 0 wrong twice (triggers hasWrongAnswer), sentences 1-3 correct
+    fireEvent.click(screen.getByRole('button', { name: '背诵' }))
+    act(() => speakLinesDones[1]())                          // 第一句 done → beginReciteListening(0)
+    act(() => startListeningCallbacks[0]('错误的答案'))       // wrong → 重复
+    act(() => speakLinesDones[2]())                          // 重复 done → speak expected
+    act(() => speakLinesDones[3]())                          // expected done → listenForCorrection(0)
+    act(() => startListeningCallbacks[1]('还是错'))           // correction also wrong → hasWrongAnswer=true
+    act(() => speakLinesDones[4]())                          // 还是不对 done → advanceReciteSentence(1) → 第二句
+    act(() => speakLinesDones[5]())                          // 第二句 done → beginReciteListening(1)
+    act(() => startListeningCallbacks[2](sentences[1]))      // correct
+    act(() => speakLinesDones[6]())                          // 第三句 done
+    act(() => startListeningCallbacks[3](sentences[2]))      // correct
+    act(() => speakLinesDones[7]())                          // 第四句 done
+    act(() => startListeningCallbacks[4](sentences[3]))      // correct → end → 要不要降一颗星？
+
+    act(() => speakLinesDones[8]())                          // 要不要降一颗星 done → startListening[5]
+    act(() => startListeningCallbacks[5]('是'))              // accept → setPoem(rating 3) + 已降一颗星
+    act(() => speakLinesDones[9]())                          // 已降一颗星 done → 背诵完成
+    act(() => speakLinesDones[10]())                         // 背诵完成 done → handleReciteComplete → next poem
+
+    const spoken = speakLines.mock.calls.map((c: unknown[]) => c[0])
+    // Must navigate to the next 4-star poem (春晓), not the 3-star poem (悯农)
+    expect(spoken).toContainEqual(['春晓，孟浩然'])
+    expect(spoken).not.toContainEqual(['悯农，李绅'])
   })
 })

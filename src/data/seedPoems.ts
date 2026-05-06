@@ -1,0 +1,100 @@
+import type { SavedPoem } from '../types'
+
+const STALE_THRESHOLD = 10000 // addedAt below this (ms since epoch) means it was seeded with a placeholder timestamp
+
+export function getMissingSeeds(libraryPoems: SavedPoem[], seeds: SavedPoem[]): SavedPoem[] {
+  return seeds.filter((s) => {
+    const existing = libraryPoems.find((p) => p.title === s.title && p.author === s.author)
+    if (!existing) return true
+    return existing.addedAt < STALE_THRESHOLD
+  })
+}
+
+export const SEED_POEMS: SavedPoem[] = [
+  {
+    id: 'seed-lu-you-shier',
+    title: '示儿',
+    author: '陆游',
+    dynasty: 'song',
+    authorBackground: '',
+    lines: ['死去元知万事空', '但悲不见九州同', '王师北定中原日', '家祭无忘告乃翁'],
+    addedAt: 0,
+    rating: 3,
+  },
+  {
+    id: 'seed-zhou-dunyi-ailienshuo',
+    title: '爱莲说',
+    author: '周敦颐',
+    dynasty: 'song',
+    authorBackground: '',
+    lines: [
+      '水陆草木之花，可爱者甚蕃',
+      '晋陶渊明独爱菊',
+      '自李唐来，世人甚爱牡丹',
+      '予独爱莲之出淤泥而不染',
+      '濯清涟而不妖',
+      '中通外直，不蔓不枝',
+      '香远益清，亭亭净植',
+      '可远观而不可亵玩焉',
+      '予谓菊，花之隐逸者也',
+      '牡丹，花之富贵者也',
+      '莲，花之君子者也',
+      '噫！菊之爱，陶后鲜有闻',
+      '莲之爱，同予者何人',
+      '牡丹之爱，宜乎众矣',
+    ],
+    addedAt: 1,
+    rating: 3,
+  },
+  {
+    id: 'seed-song-lian-dongyangmashengxu',
+    title: '送东阳马生序',
+    author: '宋濂',
+    dynasty: 'ming',
+    authorBackground: '',
+    lines: [
+      '余幼时即嗜学',
+      '家贫，无从致书以观',
+      '每假借于藏书之家，手自笔录，计日以还',
+      '天大寒，砚冰坚，手指不可屈伸，弗之怠',
+      '录毕，走送之，不敢稍逾约',
+      '以是人多以书假余，余因得遍观群书',
+      '既加冠，益慕圣贤之道',
+      '又患无硕师名人与游',
+      '尝趋百里外，从乡之先达执经叩问',
+      '先达德隆望尊，门人弟子填其室，未尝稍降辞色',
+      '余立侍左右，援疑质理，俯身倾耳以请',
+      '或遇其叱咄，色愈恭，礼愈至，不敢出一言以复',
+      '俟其欣悦，则又请焉',
+      '故余虽愚，卒获有所闻',
+      '当余之从师也，负箧曳屣行深山巨谷中',
+      '穷冬烈风，大雪深数尺，足肤皲裂而不知',
+      '至舍，四支僵劲不能动',
+      '媵人持汤沃灌，以衾拥覆，久而乃和',
+      '寓逆旅，主人日再食，无鲜肥滋味之享',
+      '同舍生皆被绮绣，戴朱缨宝饰之帽',
+      '腰白玉之环，左佩刀，右备容臭，烨然若神人',
+      '余则缊袍敝衣处其间，略无慕艳意',
+      '以中有足乐者，不知口体之奉不若人也',
+      '盖余之勤且艰若此',
+      '今诸生学于太学，县官日有廪稍之供',
+      '父母岁有裘葛之遗，无冻馁之患矣',
+      '坐大厦之下而诵诗书，无奔走之劳矣',
+      '有司业、博士为之师，未有问而不告、求而不得者也',
+      '凡所宜有之书，皆集于此',
+      '不必若余之手录，假诸人而后见也',
+      '其业有不精、德有不成者，非天质之卑',
+      '则心不若余之专耳，岂他人之过哉',
+      '东阳马生君则，在太学已二年，流辈甚称其贤',
+      '余朝京师，生以乡人子谒余',
+      '撰长书以为贽，辞甚畅达',
+      '与之论辨，言和而色夷',
+      '自谓少时用心于学甚劳，是可谓善学者矣',
+      '其将归见其亲也，余故道为学之难以告之',
+      '谓余勉乡人以学者，余之志也',
+      '诋我夸际遇之盛而骄乡人者，岂知余者哉',
+    ],
+    addedAt: 2,
+    rating: 3,
+  },
+]

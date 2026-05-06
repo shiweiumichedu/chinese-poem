@@ -71,4 +71,24 @@ describe('searchPoems', () => {
     const c = [makePoem('b', '奉和麟德殿宴百僚應[制]')]
     expect(searchPoems(c, '奉和麟德殿宴百僚應制')[0].id).toBe('b')
   })
+
+  it('matches simplified query to traditional title', () => {
+    const c = [
+      {
+        ...makePoem('t1', '黃鶴樓送孟浩然之廣陵'),
+        lines: ['故人西辭黃鶴樓，煙花三月下揚州。'],
+      },
+    ]
+    expect(searchPoems(c, '黄鹤楼送孟浩然之广陵')[0].id).toBe('t1')
+  })
+
+  it('matches traditional query to simplified line', () => {
+    const c = [
+      {
+        ...makePoem('s1', '黄鹤楼送孟浩然之广陵'),
+        lines: ['故人西辞黄鹤楼，烟花三月下扬州。'],
+      },
+    ]
+    expect(searchPoems(c, '故人西辭黃鶴樓')[0].id).toBe('s1')
+  })
 })

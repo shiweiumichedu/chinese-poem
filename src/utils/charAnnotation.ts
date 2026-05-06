@@ -8,6 +8,6 @@ export function buildTtsLine(
   const relevant = annotations.filter((a) => a.lineIndex === lineIndex)
   if (!relevant.length) return line
   return Array.from(line)
-    .map((char, i) => relevant.find((a) => a.charIndex === i)?.substitute ?? char)
+    .map((char, i) => relevant.find((a) => a.charIndex === i)?.substitute || char)
     .join('')
 }

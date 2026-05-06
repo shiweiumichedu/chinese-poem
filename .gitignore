@@ -3,3 +3,6 @@ dist/
 public/corpus.json
 public/authors.json
 .superpowers/
+.claude/
+CLAUDE.md
+test-debug.js

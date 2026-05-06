@@ -23,4 +23,9 @@ describe('buildTtsLine', () => {
     const ann: CharAnnotation[] = [{ lineIndex: 1, charIndex: 0, pinyin: 'x', substitute: 'X' }]
     expect(buildTtsLine('千里江陵一日还', 0, ann)).toBe('千里江陵一日还')
   })
+
+  it('falls back to original char when substitute is empty string', () => {
+    const ann: CharAnnotation[] = [{ lineIndex: 0, charIndex: 6, pinyin: 'huán', substitute: '' }]
+    expect(buildTtsLine('千里江陵一日还', 0, ann)).toBe('千里江陵一日还')
+  })
 })

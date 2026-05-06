@@ -1,6 +1,20 @@
 import { useState, useEffect } from 'react'
 import type { CorpusPoem } from '../types'
 
+const SUPPLEMENTAL_POEMS: Omit<CorpusPoem, 'authorBackground'>[] = [
+  {
+    id: 'supplemental-jia-dao-xun-yin-zhe-bu-yu',
+    title: '寻隐者不遇',
+    author: '贾岛',
+    dynasty: 'tang',
+    lines: ['松下问童子，言师采药去。', '只在此山中，云深不知处。'],
+  },
+]
+
+function poemKey(poem: Pick<CorpusPoem, 'title' | 'author'>): string {
+  return `${poem.title}::${poem.author}`
+}
+
 interface UseCorpusResult {
   corpus: CorpusPoem[]
   loading: boolean
@@ -34,6 +48,16 @@ export function useCorpus(): UseCorpusResult {
           ...poem,
           authorBackground: authors[poem.author] ?? '',
         }))
+
+        const existing = new Set(joined.map(poemKey))
+        for (const poem of SUPPLEMENTAL_POEMS) {
+          if (existing.has(poemKey(poem))) continue
+
+          joined.push({
+            ...poem,
+            authorBackground: authors[poem.author] ?? '',
+          })
+        }
 
         setCorpus(joined)
         setLoading(false)

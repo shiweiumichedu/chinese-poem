@@ -96,6 +96,7 @@ describe('VoiceController', () => {
   })
 
   it('speakLines calls speechSynthesis.speak once per line', () => {
+    vi.useFakeTimers()
     const ctrl = createVoiceController()
     const lines = ['床前明月光', '疑是地上霜']
 
@@ -113,12 +114,15 @@ describe('VoiceController', () => {
     // speak() does NOT auto-trigger onend — we verify synchronous behaviour only
     const onLineStart = vi.fn()
     ctrl.speakLines(lines, onLineStart, vi.fn())
+    vi.runOnlyPendingTimers()
 
     expect(mockSpeak).toHaveBeenCalledTimes(1) // first line queued immediately
     expect(ctrl.state).toBe('speaking')
+    vi.useRealTimers()
   })
 
   it('speakLines chains utterances sequentially and fires onLineStart per line', () => {
+    vi.useFakeTimers()
     type MockUtt = { text: string; lang: string; onstart: (() => void) | null; onend: (() => void) | null; onerror: (() => void) | null }
     const utts: MockUtt[] = []
     setWindowProp('SpeechSynthesisUtterance', class {
@@ -131,12 +135,14 @@ describe('VoiceController', () => {
     const ctrl = createVoiceController()
 
     ctrl.speakLines(['床前明月光', '疑是地上霜'], onLineStart, onDone)
+    vi.runOnlyPendingTimers()
 
     expect(mockSpeak).toHaveBeenCalledTimes(1)
     utts[0].onstart!()
     expect(onLineStart).toHaveBeenCalledWith(0)
 
     utts[0].onend!()
+    vi.runOnlyPendingTimers()
     expect(mockSpeak).toHaveBeenCalledTimes(2)
     utts[1].onstart!()
     expect(onLineStart).toHaveBeenCalledWith(1)
@@ -144,6 +150,7 @@ describe('VoiceController', () => {
     utts[1].onend!()
     expect(onDone).toHaveBeenCalledTimes(1)
     expect(ctrl.state).toBe('idle')
+    vi.useRealTimers()
   })
 
   it('double startListening aborts old session before starting new one', () => {
@@ -182,6 +189,7 @@ describe('VoiceController', () => {
   })
 
   it('speakLines sets utterance.rate from the rate parameter', () => {
+    vi.useFakeTimers()
     type MockUtt = {
       text: string; lang: string; rate: number
       onstart: (() => void) | null; onend: (() => void) | null; onerror: (() => void) | null
@@ -196,10 +204,13 @@ describe('VoiceController', () => {
     })
     const ctrl = createVoiceController()
     ctrl.speakLines(['床前明月光'], vi.fn(), vi.fn(), 0.7)
+    vi.runOnlyPendingTimers()
     expect(utts[0].rate).toBe(0.7)
+    vi.useRealTimers()
   })
 
   it('speakLines defaults utterance.rate to 1.0 when rate omitted', () => {
+    vi.useFakeTimers()
     type MockUtt = {
       text: string; lang: string; rate: number
       onstart: (() => void) | null; onend: (() => void) | null; onerror: (() => void) | null
@@ -214,6 +225,8 @@ describe('VoiceController', () => {
     })
     const ctrl = createVoiceController()
     ctrl.speakLines(['床前明月光'], vi.fn(), vi.fn())
+    vi.runOnlyPendingTimers()
     expect(utts[0].rate).toBe(1.0)
+    vi.useRealTimers()
   })
 })

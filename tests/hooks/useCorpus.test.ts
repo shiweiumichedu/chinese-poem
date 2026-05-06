@@ -45,8 +45,10 @@ describe('useCorpus', () => {
 
     await waitFor(() => expect(result.current.loading).toBe(false))
 
-    expect(result.current.corpus).toHaveLength(1)
-    expect(result.current.corpus[0].authorBackground).toBe('唐代诗人')
+    const liBai = result.current.corpus.find((poem) => poem.title === '静夜思')
+
+    expect(liBai).toBeDefined()
+    expect(liBai?.authorBackground).toBe('唐代诗人')
     expect(result.current.error).toBeNull()
   })
 
@@ -57,7 +59,23 @@ describe('useCorpus', () => {
 
     await waitFor(() => expect(result.current.loading).toBe(false))
 
-    expect(result.current.corpus[0].authorBackground).toBe('')
+    const liBai = result.current.corpus.find((poem) => poem.title === '静夜思')
+
+    expect(liBai).toBeDefined()
+    expect(liBai?.authorBackground).toBe('')
+  })
+
+  it('adds supplemental poems when missing from corpus.json', async () => {
+    vi.stubGlobal('fetch', makeFetch(rawPoems, authors))
+
+    const { result } = renderHook(() => useCorpus())
+
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    const target = result.current.corpus.find((poem) => poem.title === '寻隐者不遇' && poem.author === '贾岛')
+
+    expect(target).toBeDefined()
+    expect(target?.lines).toEqual(['松下问童子，言师采药去。', '只在此山中，云深不知处。'])
   })
 
   it('sets error when fetch fails and loading becomes false', async () => {
