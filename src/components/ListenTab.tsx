@@ -8,6 +8,7 @@ import { PoemSearchModal } from './PoemSearchModal'
 import { findPoemOnline, searchResultToSavedPoem, type SearchResult } from '../utils/findPoemOnline'
 import { getDisplaySentences } from '../utils/poemLineDisplay'
 import { buildTtsLine } from '../utils/charAnnotation'
+import { useWakeLock } from '../hooks/useWakeLock'
 import { Converter } from 'opencc-js/t2cn'
 import { pinyin } from 'pinyin-pro'
 
@@ -126,6 +127,8 @@ export function ListenTab({
   useEffect(() => { repeatPlayRef.current = repeatPlay }, [repeatPlay])
   useEffect(() => { libraryPoemsRef.current = libraryPoems }, [libraryPoems])
   useEffect(() => { recitingRef.current = reciting }, [reciting])
+
+  useWakeLock(voiceState !== 'idle' || reciting)
 
   function setPoem(poem: SavedPoem) {
     setCurrentPoem(poem)
