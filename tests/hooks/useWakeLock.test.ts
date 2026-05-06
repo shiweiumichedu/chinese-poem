@@ -48,6 +48,7 @@ describe('useWakeLock', () => {
 
   it('calls allowSleep on unmount while active', () => {
     const { unmount } = renderHook(() => useWakeLock(true))
+    expect(mockKeepAwake).toHaveBeenCalledTimes(1)
     unmount()
     expect(mockAllowSleep).toHaveBeenCalledTimes(1)
   })
