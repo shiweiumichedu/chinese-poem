@@ -60,11 +60,15 @@ export function LibraryTab({
     return queryFiltered.filter((p) => p.rating === mineStarFilter)
   }, [savedPoems, mineQuery, mineStarFilter])
 
+  const savedById = useMemo(
+    () => new Map(savedPoems.map(p => [p.id, p])),
+    [savedPoems]
+  )
+
   const browseResults = useMemo(() => {
-    const savedIds = new Set(savedPoems.map(p => p.id))
     const pool = browseQuery ? searchPoems(corpus, browseQuery) : corpus
-    return pool.filter(p => !savedIds.has(p.id)).slice(0, 50)
-  }, [corpus, browseQuery, savedPoems])
+    return pool.slice(0, 50)
+  }, [corpus, browseQuery])
 
   function handleAddByVoice() {
     if (voiceState === 'listening') {
@@ -358,33 +362,61 @@ export function LibraryTab({
             <p className="corpus-error-browse">诗库加载失败</p>
           ) : (
             <div className="browse-results">
-              {browseResults.map((poem) => (
-                <button
-                  key={poem.id}
-                  className="browse-result-item"
-                  onClick={() => setPreview(poem)}
-                  aria-label={`添加 ${poem.title}`}
-                >
-                  <span className="browse-result-title">{poem.title}</span>
-                  <span className="browse-result-meta">
-                    {poem.author} · {DYNASTY_LABEL[poem.dynasty] ?? poem.dynasty}
-                  </span>
-                  <span className="browse-result-add" aria-hidden="true">＋</span>
-                </button>
-              ))}
-              {browseResults.length === 0 && (
-                <div className="online-search-wrap">
-                  <p className="browse-no-results">
-                    {browseQuery ? '未找到匹配的诗' : '所有诗词已添加到诗库'}
-                  </p>
-                  {browseQuery && (
+              {browseResults.map((poem) => {
+                const saved = savedById.get(poem.id)
+                if (!saved) {
+                  return (
                     <button
-                      className="btn-online-search"
-                      onClick={() => handleOnlineSearch(browseQuery)}
+                      key={poem.id}
+                      className="browse-result-item"
+                      onClick={() => setPreview(poem)}
+                      aria-label={`添加 ${poem.title}`}
                     >
-                      联网找诗
+                      <span className="browse-result-title">{poem.title}</span>
+                      <span className="browse-result-meta">
+                        {poem.author} · {DYNASTY_LABEL[poem.dynasty] ?? poem.dynasty}
+                      </span>
+                      <span className="browse-result-add" aria-hidden="true">＋</span>
                     </button>
-                  )}
+                  )
+                }
+                const rating = saved.rating
+                return (
+                  <div
+                    key={poem.id}
+                    className="browse-result-item saved"
+                    aria-label={`${poem.title}（已在诗库）`}
+                  >
+                    <span className="browse-result-title">{poem.title}</span>
+                    <span className="browse-result-meta">
+                      {poem.author} · {DYNASTY_LABEL[poem.dynasty] ?? poem.dynasty}
+                    </span>
+                    {typeof rating === 'number' && rating >= 1 && rating <= 5 ? (
+                      <span className="browse-result-stars" aria-hidden="true">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <span
+                            key={star}
+                            className={`star${rating >= star ? ' filled' : ''}`}
+                          >
+                            ★
+                          </span>
+                        ))}
+                      </span>
+                    ) : (
+                      <span className="browse-result-saved-check" aria-hidden="true">✓</span>
+                    )}
+                  </div>
+                )
+              })}
+              {browseResults.length === 0 && browseQuery && (
+                <div className="online-search-wrap">
+                  <p className="browse-no-results">未找到匹配的诗</p>
+                  <button
+                    className="btn-online-search"
+                    onClick={() => handleOnlineSearch(browseQuery)}
+                  >
+                    联网找诗
+                  </button>
                 </div>
               )}
             </div>
