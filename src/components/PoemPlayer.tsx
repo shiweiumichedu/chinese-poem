@@ -112,6 +112,7 @@ export function PoemPlayer({ poem, onPlay, onStop, isPlaying, highlightedLine, t
 
   useEffect(() => {
     setAnnotationTarget(null)
+    setPendingRating(null)
   }, [poem.id])
 
   const displayLines = buildDisplayLines(poem.lines)
@@ -192,9 +193,10 @@ export function PoemPlayer({ poem, onPlay, onStop, isPlaying, highlightedLine, t
       <p className="poem-author">{poem.author} · {DYNASTY_LABEL[poem.dynasty] ?? poem.dynasty}</p>
       {(poem.rating !== undefined || onRate !== undefined) && (
         <div className="poem-player-rating">
-          {[1, 2, 3, 4, 5].map((star) => {
+          {(() => {
             const displayFill = pendingRating !== null ? pendingRating : (poem.rating ?? 0)
-            if (onRate !== undefined) {
+            return [1, 2, 3, 4, 5].map((star) => {
+              if (onRate !== undefined) {
               return (
                 <button
                   key={star}
@@ -212,7 +214,8 @@ export function PoemPlayer({ poem, onPlay, onStop, isPlaying, highlightedLine, t
                 ★
               </span>
             )
-          })}
+            })
+          })()}
         </div>
       )}
       {pendingRating !== null && (
