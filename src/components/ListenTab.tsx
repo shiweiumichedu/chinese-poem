@@ -470,6 +470,21 @@ export function ListenTab({
     await onPoemUpdated()
   }
 
+  async function handleRate(rating: number) {
+    if (!currentPoem) return
+    const updated: SavedPoem = {
+      ...currentPoem,
+      rating: currentPoem.rating === rating ? undefined : rating,
+    }
+    try {
+      await savePoem(updated)
+      setCurrentPoem(updated)
+      await onPoemUpdated()
+    } catch (e) {
+      console.error('Failed to save rating', e)
+    }
+  }
+
   function handleVoiceSearch() {
     if (recitingRef.current) {
       stopRecitingSession()
@@ -697,6 +712,7 @@ export function ListenTab({
           onNextPoem={handleJumpToNext}
           onCharAnnotate={handleCharAnnotate}
           onCharAnnotateRemove={handleCharAnnotateRemove}
+          onRate={currentPoem ? handleRate : undefined}
         />
       )}
     </div>
