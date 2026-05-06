@@ -38,10 +38,9 @@ export function LibraryTab({
 }: LibraryTabProps) {
   const [preview, setPreview] = useState<CorpusPoem | null>(null)
   const [addNotFound, setAddNotFound] = useState(false)
-  const [addTextQuery, setAddTextQuery] = useState('')
+  const [query, setQuery] = useState('')
   const [activeSubTab, setActiveSubTab] = useState<SubTab>('mine')
   const [browseQuery, setBrowseQuery] = useState('')
-  const [mineQuery, setMineQuery] = useState('')
   const [mineStarFilter, setMineStarFilter] = useState<number>(0)
 
   // Online search modal state
@@ -52,13 +51,13 @@ export function LibraryTab({
   const [currentSearchQuery, setCurrentSearchQuery] = useState('')
 
   const filteredSavedPoems = useMemo(() => {
-    const queryFiltered = mineQuery
-      ? (searchPoems(savedPoems, mineQuery) as SavedPoem[])
+    const queryFiltered = query
+      ? (searchPoems(savedPoems, query) as SavedPoem[])
       : savedPoems
 
     if (mineStarFilter === 0) return queryFiltered
     return queryFiltered.filter((p) => p.rating === mineStarFilter)
-  }, [savedPoems, mineQuery, mineStarFilter])
+  }, [savedPoems, query, mineStarFilter])
 
   const savedById = useMemo(
     () => new Map(savedPoems.map(p => [p.id, p])),
@@ -77,7 +76,7 @@ export function LibraryTab({
     }
     setAddNotFound(false)
     startListening((text) => {
-      setAddTextQuery(text)
+      setQuery(text)
       const results = searchPoems(corpus, text)
       if (results.length > 0) {
         const found = results[0]
@@ -94,7 +93,7 @@ export function LibraryTab({
   }
 
   function handleAddByText() {
-    const results = searchPoems(corpus, addTextQuery)
+    const results = searchPoems(corpus, query)
     if (results.length > 0) {
       setPreview(results[0])
       setAddNotFound(false)
@@ -132,7 +131,7 @@ export function LibraryTab({
     if (!preview) return
     await savePoem({ ...preview, addedAt: Date.now() })
     setPreview(null)
-    setAddTextQuery('')
+    setQuery('')
     await onPoemAdded()
   }
 
@@ -174,14 +173,14 @@ export function LibraryTab({
       const existing = findExistingSavedPoem(result)
       if (existing) {
         setActiveSubTab('mine')
-        setMineQuery(result.title)
+        setQuery(result.title)
         onPoemSelect(existing)
         return
       }
 
       const saved = searchResultToSavedPoem(result)
       await savePoem(saved)
-      setAddTextQuery('')
+      setQuery('')
       setAddNotFound(false)
       await onPoemAdded()
     } catch (error) {
@@ -224,6 +223,15 @@ export function LibraryTab({
               <p>正在加载诗库...</p>
             ) : (
               <div className="add-text-input">
+                <input
+                  type="text"
+                  placeholder="搜索诗名或诗句..."
+                  aria-label="诗名或诗句"
+                  lang="zh-CN"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleAddByText() }}
+                />
                 {isSTTSupported && (
                   <button
                     className={`btn-voice-search${voiceState === 'listening' ? ' active' : ''}`}
@@ -241,7 +249,7 @@ export function LibraryTab({
                 <p className="add-not-found">未在诗库中找到该诗，请检查诗名</p>
                 <button
                   className="btn-online-search"
-                  onClick={() => handleOnlineSearch(addTextQuery)}
+                  onClick={() => handleOnlineSearch(query)}
                 >
                   联网找诗
                 </button>
@@ -251,14 +259,6 @@ export function LibraryTab({
 
           {savedPoems.length > 0 && (
             <div className="mine-filters">
-              <input
-                type="text"
-                placeholder="搜索诗名或诗句..."
-                aria-label="搜索我的诗库（诗名或诗句）"
-                lang="zh-CN"
-                value={mineQuery}
-                onChange={(e) => setMineQuery(e.target.value)}
-              />
               <select
                 aria-label="按星级筛选我的诗库"
                 value={mineStarFilter}
