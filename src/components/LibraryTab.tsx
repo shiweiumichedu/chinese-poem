@@ -241,7 +241,20 @@ export function LibraryTab({
                     {voiceState === 'listening' ? '🎙️' : '🎤'}
                   </button>
                 )}
-                <button onClick={handleAddByText}>查找</button>
+                {savedPoems.length > 0 && (
+                  <select
+                    aria-label="按星级筛选我的诗库"
+                    value={mineStarFilter}
+                    onChange={(e) => setMineStarFilter(Number(e.target.value))}
+                  >
+                    <option value={0}>全部星级</option>
+                    <option value={5}>5 星</option>
+                    <option value={4}>4 星</option>
+                    <option value={3}>3 星</option>
+                    <option value={2}>2 星</option>
+                    <option value={1}>1 星</option>
+                  </select>
+                )}
               </div>
             )}
             {addNotFound && (
@@ -256,23 +269,6 @@ export function LibraryTab({
               </div>
             )}
           </div>
-
-          {savedPoems.length > 0 && (
-            <div className="mine-filters">
-              <select
-                aria-label="按星级筛选我的诗库"
-                value={mineStarFilter}
-                onChange={(e) => setMineStarFilter(Number(e.target.value))}
-              >
-                <option value={0}>全部星级</option>
-                <option value={5}>5 星</option>
-                <option value={4}>4 星</option>
-                <option value={3}>3 星</option>
-                <option value={2}>2 星</option>
-                <option value={1}>1 星</option>
-              </select>
-            </div>
-          )}
           <div className="poem-list">
             {savedPoems.length === 0 ? (
               <p className="empty-library">诗库为空，请添加诗词</p>
