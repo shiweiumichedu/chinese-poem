@@ -53,9 +53,10 @@ interface PoemPlayerProps {
   onReciteToggle?: () => void
   nextPoem?: SavedPoem | null
   onNextPoem?: () => void
+  onRate?: (rating: number) => void
 }
 
-export function PoemPlayer({ poem, onPlay, onStop, isPlaying, highlightedLine, ttsRate, setTtsRate, onLineEdit, onLineBoldToggle, onSpeakLine, autoPlay, onAutoPlayToggle, repeatPlay, onRepeatPlayToggle, reciting, onReciteToggle, onBack, nextPoem, onNextPoem, onCharAnnotate, onCharAnnotateRemove }: PoemPlayerProps) {
+export function PoemPlayer({ poem, onPlay, onStop, isPlaying, highlightedLine, ttsRate, setTtsRate, onLineEdit, onLineBoldToggle, onSpeakLine, autoPlay, onAutoPlayToggle, repeatPlay, onRepeatPlayToggle, reciting, onReciteToggle, onBack, nextPoem, onNextPoem, onCharAnnotate, onCharAnnotateRemove, onRate }: PoemPlayerProps) {
   const [internalHighlight, setInternalHighlight] = useState<number | null>(null)
   const [editingLine, setEditingLine] = useState<number | null>(null)
   const [editValue, setEditValue] = useState('')
@@ -72,6 +73,13 @@ export function PoemPlayer({ poem, onPlay, onStop, isPlaying, highlightedLine, t
   } | null>(null)
   const [annotPinyin, setAnnotPinyin] = useState('')
   const [annotSubstitute, setAnnotSubstitute] = useState('')
+  const [pendingRating, setPendingRating] = useState<number | null>(null)
+
+  function handleConfirmRating() {
+    if (pendingRating === null) return
+    onRate?.(pendingRating)
+    setPendingRating(null)
+  }
 
   const displayHighlight = highlightedLine !== undefined ? highlightedLine : internalHighlight
 
@@ -182,13 +190,36 @@ export function PoemPlayer({ poem, onPlay, onStop, isPlaying, highlightedLine, t
       )}
       <h2 className="poem-title">{poem.title}</h2>
       <p className="poem-author">{poem.author} · {DYNASTY_LABEL[poem.dynasty] ?? poem.dynasty}</p>
-      {poem.rating !== undefined && (
+      {(poem.rating !== undefined || onRate !== undefined) && (
         <div className="poem-player-rating">
-          {[1, 2, 3, 4, 5].map((star) => (
-            <span key={star} className={`player-star${(poem.rating ?? 0) >= star ? ' filled' : ''}`}>
-              ★
-            </span>
-          ))}
+          {[1, 2, 3, 4, 5].map((star) => {
+            const displayFill = pendingRating !== null ? pendingRating : (poem.rating ?? 0)
+            if (onRate !== undefined) {
+              return (
+                <button
+                  key={star}
+                  className={`player-star${displayFill >= star ? ' filled' : ''}`}
+                  onClick={() => setPendingRating(star)}
+                  disabled={pendingRating !== null}
+                  aria-label={`评分 ${star} 星`}
+                >
+                  ★
+                </button>
+              )
+            }
+            return (
+              <span key={star} className={`player-star${(poem.rating ?? 0) >= star ? ' filled' : ''}`}>
+                ★
+              </span>
+            )
+          })}
+        </div>
+      )}
+      {pendingRating !== null && (
+        <div className="rating-confirm-row">
+          <span>设为 {pendingRating}★？</span>
+          <button onClick={handleConfirmRating}>确认</button>
+          <button onClick={() => setPendingRating(null)}>取消</button>
         </div>
       )}
       <div className="poem-lines">

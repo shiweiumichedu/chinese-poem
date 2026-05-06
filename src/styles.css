@@ -201,6 +201,9 @@ body {
 .poem-player-rating { display: flex; gap: 4px; justify-content: center; margin: 12px 0 16px; }
 .player-star { font-size: 18px; color: #6a6a8a; }
 .player-star.filled { color: #ffd700; }
+button.player-star { background: none; border: none; padding: 0; cursor: pointer; }
+button.player-star:disabled { cursor: default; }
+.rating-confirm-row { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 12px; font-size: 14px; }
 .author-background { margin-top: 20px; font-size: 13px; color: #7a6a5a; line-height: 1.6; }
 .poem-controls { display: flex; gap: 10px; justify-content: center; align-items: center; margin-top: 20px; }
 .poem-line.editable { cursor: text; }
