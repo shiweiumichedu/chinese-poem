@@ -197,23 +197,23 @@ export function PoemPlayer({ poem, onPlay, onStop, isPlaying, highlightedLine, t
             const displayFill = pendingRating !== null ? pendingRating : (poem.rating ?? 0)
             return [1, 2, 3, 4, 5].map((star) => {
               if (onRate !== undefined) {
+                return (
+                  <button
+                    key={star}
+                    className={`player-star${displayFill >= star ? ' filled' : ''}`}
+                    onClick={() => setPendingRating(star)}
+                    disabled={pendingRating !== null}
+                    aria-label={`评分 ${star} 星`}
+                  >
+                    ★
+                  </button>
+                )
+              }
               return (
-                <button
-                  key={star}
-                  className={`player-star${displayFill >= star ? ' filled' : ''}`}
-                  onClick={() => setPendingRating(star)}
-                  disabled={pendingRating !== null}
-                  aria-label={`评分 ${star} 星`}
-                >
+                <span key={star} className={`player-star${(poem.rating ?? 0) >= star ? ' filled' : ''}`}>
                   ★
-                </button>
+                </span>
               )
-            }
-            return (
-              <span key={star} className={`player-star${(poem.rating ?? 0) >= star ? ' filled' : ''}`}>
-                ★
-              </span>
-            )
             })
           })()}
         </div>

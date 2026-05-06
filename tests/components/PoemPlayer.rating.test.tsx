@@ -69,4 +69,25 @@ describe('PoemPlayer star rating', () => {
     expect(onRate).not.toHaveBeenCalled()
     expect(screen.queryByText('设为 4★？')).not.toBeInTheDocument()
   })
+
+  it('calls onRate with same value when current star is tapped (toggle-to-clear is caller responsibility)', () => {
+    const onRate = vi.fn()
+    // poem.rating is 3; tap star 3
+    render(<PoemPlayer {...defaultProps} onRate={onRate} />)
+    fireEvent.click(screen.getByRole('button', { name: '评分 3 星' }))
+    fireEvent.click(screen.getByRole('button', { name: '确认' }))
+    // PoemPlayer passes the value through; handleRate in ListenTab handles the toggle
+    expect(onRate).toHaveBeenCalledWith(3)
+  })
+
+  it('hides confirmation row when poem changes', () => {
+    const onRate = vi.fn()
+    const { rerender } = render(<PoemPlayer {...defaultProps} onRate={onRate} />)
+    fireEvent.click(screen.getByRole('button', { name: '评分 4 星' }))
+    expect(screen.getByText('设为 4★？')).toBeInTheDocument()
+
+    const poem2: SavedPoem = { ...poem, id: '2', title: '春晓' }
+    rerender(<PoemPlayer {...defaultProps} poem={poem2} onRate={onRate} />)
+    expect(screen.queryByText('设为 4★？')).not.toBeInTheDocument()
+  })
 })
