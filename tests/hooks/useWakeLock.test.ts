@@ -1,23 +1,25 @@
-import { renderHook, act } from '@testing-library/react'
+import { renderHook } from '@testing-library/react'
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest'
 
-vi.mock('@capacitor-community/keep-awake')
+vi.mock('@capacitor-community/keep-awake', () => ({
+  KeepAwake: { keepAwake: vi.fn(), allowSleep: vi.fn() },
+}))
 
 import { KeepAwake } from '@capacitor-community/keep-awake'
 import { useWakeLock } from '../../src/hooks/useWakeLock'
 
-const mockKeepAwake = vi.fn().mockResolvedValue(undefined)
-const mockAllowSleep = vi.fn().mockResolvedValue(undefined)
+let mockKeepAwake: ReturnType<typeof vi.spyOn>
+let mockAllowSleep: ReturnType<typeof vi.spyOn>
 
 beforeEach(() => {
-  vi.mocked(KeepAwake).keepAwake = mockKeepAwake
-  vi.mocked(KeepAwake).allowSleep = mockAllowSleep
-  mockKeepAwake.mockClear()
-  mockAllowSleep.mockClear()
+  if (mockKeepAwake) mockKeepAwake.mockRestore()
+  if (mockAllowSleep) mockAllowSleep.mockRestore()
+  mockKeepAwake = vi.spyOn(KeepAwake, 'keepAwake').mockResolvedValue(undefined)
+  mockAllowSleep = vi.spyOn(KeepAwake, 'allowSleep').mockResolvedValue(undefined)
 })
 
 afterEach(() => {
-  vi.clearAllMocks()
+  vi.restoreAllMocks()
 })
 
 describe('useWakeLock', () => {
@@ -31,7 +33,7 @@ describe('useWakeLock', () => {
     const { rerender } = renderHook(({ active }) => useWakeLock(active), {
       initialProps: { active: false },
     })
-    act(() => { rerender({ active: true }) })
+    rerender({ active: true })
     expect(mockKeepAwake).toHaveBeenCalledTimes(1)
     expect(mockAllowSleep).not.toHaveBeenCalled()
   })
@@ -40,7 +42,7 @@ describe('useWakeLock', () => {
     const { rerender } = renderHook(({ active }) => useWakeLock(active), {
       initialProps: { active: true },
     })
-    act(() => { rerender({ active: false }) })
+    rerender({ active: false })
     expect(mockAllowSleep).toHaveBeenCalledTimes(1)
   })
 
