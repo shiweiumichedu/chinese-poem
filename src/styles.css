@@ -306,6 +306,31 @@ button.player-star:disabled { cursor: default; }
 .browse-result-title { font-size: 16px; color: #e8d5b7; display: block; }
 .browse-result-meta { font-size: 12px; color: #8888aa; display: block; }
 .browse-result-add { color: #88cc88; font-size: 18px; flex-shrink: 0; }
+.browse-result-item.saved {
+  cursor: default;
+}
+.browse-result-item.saved:hover {
+  background: #1e1e3a;
+}
+.browse-result-saved-check {
+  color: #6a8a6a;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.browse-result-stars {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.browse-result-item .star {
+  cursor: default;
+}
+.browse-result-item .star:hover {
+  color: inherit;
+}
+.browse-result-item .star.filled:hover {
+  color: #ffd700;
+}
 .browse-no-results { text-align: center; color: #8888aa; padding: 20px; }
 .corpus-error-browse { text-align: center; color: #ffaaaa; padding: 20px; font-size: 14px; }
 .my-library { display: flex; flex-direction: column; }
