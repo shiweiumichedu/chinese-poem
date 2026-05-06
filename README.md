@@ -80,4 +80,4 @@ Two Capacitor plugins are bundled: `@capacitor-community/keep-awake` and `@capac
 
 ## License
 
-Not yet licensed.
+[MIT](LICENSE) © 2026 Shiwei
