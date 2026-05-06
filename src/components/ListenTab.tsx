@@ -478,7 +478,7 @@ export function ListenTab({
     }
     try {
       await savePoem(updated)
-      setCurrentPoem(updated)
+      setPoem(updated)
       await onPoemUpdated()
     } catch (e) {
       console.error('Failed to save rating', e)
