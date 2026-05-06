@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import { act } from 'react'
 import userEvent from '@testing-library/user-event'
 import { LibraryTab } from '../../src/components/LibraryTab'
@@ -211,13 +211,19 @@ describe('LibraryTab', () => {
     expect(screen.getByText('春晓')).toBeInTheDocument()
   })
 
-  it('browse excludes already-saved poems from results', () => {
-    render(<LibraryTab {...makeProps({ savedPoems: [savedPoem] })} />)
+  it('browse includes saved poems and shows their rating as stars', () => {
+    const ratedSaved: SavedPoem = { ...corpusPoem, addedAt: 1000, rating: 3 }
+    render(<LibraryTab {...makeProps({ savedPoems: [ratedSaved] })} />)
     fireEvent.click(screen.getByRole('tab', { name: '浏览诗库' }))
-    // savedPoem has id 'c1' (静夜思) — should not appear in browse results
+
     const browseSection = screen.getByPlaceholderText('搜索诗库（诗名或诗句）...').closest('.browse-section')!
-    expect(browseSection).not.toHaveTextContent('静夜思')
-    expect(browseSection).toHaveTextContent('春晓')
+    expect(browseSection).toHaveTextContent('静夜思')
+
+    const row = within(browseSection as HTMLElement).getByText('静夜思').closest('.browse-result-item')!
+    const stars = row.querySelectorAll('.star')
+    expect(stars).toHaveLength(5)
+    expect(row.querySelectorAll('.star.filled')).toHaveLength(3)
+    expect(row.querySelector('.browse-result-add')).toBeNull()
   })
 
   it('tapping a browse result opens PoemPreview', () => {
@@ -234,12 +240,27 @@ describe('LibraryTab', () => {
     expect(screen.getByText('未找到匹配的诗')).toBeInTheDocument()
   })
 
-  it('shows all-added message in browse when all corpus poems are saved', () => {
-    const CORPUS_POEMS = [corpusPoem, corpusPoem2]
-    const allSaved = CORPUS_POEMS.map(p => ({ ...p, addedAt: 0 }))
-    render(<LibraryTab {...makeProps({ savedPoems: allSaved })} />)
+  it('browse shows checkmark for saved poems with no rating', () => {
+    const unratedSaved: SavedPoem = { ...corpusPoem, addedAt: 1000 }
+    render(<LibraryTab {...makeProps({ savedPoems: [unratedSaved] })} />)
     fireEvent.click(screen.getByRole('tab', { name: '浏览诗库' }))
-    expect(screen.getByText('所有诗词已添加到诗库')).toBeInTheDocument()
+
+    const browseSection = screen.getByPlaceholderText('搜索诗库（诗名或诗句）...').closest('.browse-section')!
+    const row = within(browseSection as HTMLElement).getByText('静夜思').closest('.browse-result-item')!
+    expect(row.querySelector('.browse-result-saved-check')).not.toBeNull()
+    expect(row.querySelectorAll('.star.filled')).toHaveLength(0)
+    expect(row.querySelector('.browse-result-add')).toBeNull()
+  })
+
+  it('tapping a saved poem in browse does NOT open the preview', () => {
+    const unratedSaved: SavedPoem = { ...corpusPoem, addedAt: 1000 }
+    render(<LibraryTab {...makeProps({ savedPoems: [unratedSaved] })} />)
+    fireEvent.click(screen.getByRole('tab', { name: '浏览诗库' }))
+
+    const browseSection = screen.getByPlaceholderText('搜索诗库（诗名或诗句）...').closest('.browse-section')!
+    const row = within(browseSection as HTMLElement).getByText('静夜思').closest('.browse-result-item')!
+    fireEvent.click(row)
+    expect(screen.queryByRole('button', { name: '确认添加' })).not.toBeInTheDocument()
   })
 
   it('shows corpus error message in browse tab when corpus failed', async () => {
