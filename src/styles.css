@@ -581,3 +581,11 @@ button.player-star:disabled { cursor: default; }
   opacity: 0.35;
 }
 
+.english-line {
+  color: #a0a0c0;
+  font-size: 14px;
+  font-style: italic;
+  margin: -6px 0 14px;
+  text-align: center;
+}
+

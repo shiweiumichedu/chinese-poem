@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, Fragment } from 'react'
 import type { SavedPoem } from '../types'
 import { DYNASTY_LABEL } from '../constants'
 import { buildDisplayLines } from '../utils/poemLineDisplay'
@@ -54,9 +54,11 @@ interface PoemPlayerProps {
   nextPoem?: SavedPoem | null
   onNextPoem?: () => void
   onRate?: (rating: number) => void
+  lang?: 'zh' | 'en'
+  setLang?: (lang: 'zh' | 'en') => void
 }
 
-export function PoemPlayer({ poem, onPlay, onStop, isPlaying, highlightedLine, ttsRate, setTtsRate, onLineEdit, onLineBoldToggle, onSpeakLine, autoPlay, onAutoPlayToggle, repeatPlay, onRepeatPlayToggle, reciting, onReciteToggle, onBack, nextPoem, onNextPoem, onCharAnnotate, onCharAnnotateRemove, onRate }: PoemPlayerProps) {
+export function PoemPlayer({ poem, onPlay, onStop, isPlaying, highlightedLine, ttsRate, setTtsRate, onLineEdit, onLineBoldToggle, onSpeakLine, autoPlay, onAutoPlayToggle, repeatPlay, onRepeatPlayToggle, reciting, onReciteToggle, onBack, nextPoem, onNextPoem, onCharAnnotate, onCharAnnotateRemove, onRate, lang, setLang }: PoemPlayerProps) {
   const [internalHighlight, setInternalHighlight] = useState<number | null>(null)
   const [editingLine, setEditingLine] = useState<number | null>(null)
   const [editValue, setEditValue] = useState('')
@@ -276,31 +278,37 @@ export function PoemPlayer({ poem, onPlay, onStop, isPlaying, highlightedLine, t
             handleLineAction()
           }
           return (
-            <p
-              key={`${line.sourceLineIndex}-${i}`}
-              className={`poem-line${line.sourceLineIndex === displayHighlight ? ' highlighted' : ''}${isBoldLine ? ' bold' : ''}${onLineEdit && !isPlaying ? ' editable' : ''}`}
-              onClick={handleLineAction}
-            >
-              {Array.from(line.text).map((char, charOffset) => {
-                const sourceCharIndex = line.sourceCharOffset + charOffset
-                const annotation = poem.charAnnotations?.find(
-                  (a) => a.lineIndex === line.sourceLineIndex && a.charIndex === sourceCharIndex
-                )
-                const touchHandlers = {
-                  onTouchStart: () =>
-                    handleCharTouchStart(line.sourceLineIndex, sourceCharIndex, char),
-                  onTouchEnd: handleCharTouchEnd,
-                }
-                if (annotation) {
-                  return (
-                    <ruby key={charOffset} {...touchHandlers} onClick={handleCharClick}>
-                      {char}<rt>{annotation.pinyin}</rt>
-                    </ruby>
+            <Fragment key={`${line.sourceLineIndex}-${i}`}>
+              <p
+                className={`poem-line${line.sourceLineIndex === displayHighlight ? ' highlighted' : ''}${isBoldLine ? ' bold' : ''}${onLineEdit && !isPlaying ? ' editable' : ''}`}
+                onClick={handleLineAction}
+              >
+                {Array.from(line.text).map((char, charOffset) => {
+                  const sourceCharIndex = line.sourceCharOffset + charOffset
+                  const annotation = poem.charAnnotations?.find(
+                    (a) => a.lineIndex === line.sourceLineIndex && a.charIndex === sourceCharIndex
                   )
-                }
-                return <span key={charOffset} {...touchHandlers} onClick={handleCharClick}>{char}</span>
-              })}
-            </p>
+                  const touchHandlers = {
+                    onTouchStart: () =>
+                      handleCharTouchStart(line.sourceLineIndex, sourceCharIndex, char),
+                    onTouchEnd: handleCharTouchEnd,
+                  }
+                  if (annotation) {
+                    return (
+                      <ruby key={charOffset} {...touchHandlers} onClick={handleCharClick}>
+                        {char}<rt>{annotation.pinyin}</rt>
+                      </ruby>
+                    )
+                  }
+                  return <span key={charOffset} {...touchHandlers} onClick={handleCharClick}>{char}</span>
+                })}
+              </p>
+              {lang === 'en' && poem.englishLines && isFirstRowForSource && (
+                <p className="english-line">
+                  {poem.englishLines[line.sourceLineIndex] ?? ''}
+                </p>
+              )}
+            </Fragment>
           )
         })}
       </div>
@@ -317,12 +325,25 @@ export function PoemPlayer({ poem, onPlay, onStop, isPlaying, highlightedLine, t
         ))}
       </div>
       <div className="poem-controls">
+        {setLang && (
+          <button
+            className={`btn-lang${lang === 'en' ? ' active' : ''}${!poem.englishLines ? ' unavailable' : ''}`}
+            aria-pressed={lang === 'en'}
+            aria-label={lang === 'en' ? '切换为中文' : '切换为英文'}
+            onClick={() => {
+              if (!poem.englishLines && lang !== 'en') return
+              setLang(lang === 'en' ? 'zh' : 'en')
+            }}
+          >
+            {lang === 'en' ? '英' : '中'}
+          </button>
+        )}
         {isPlaying ? (
           <button onClick={handleStop} className="btn-stop">停止</button>
         ) : (
           <button onClick={handlePlay} className="btn-play">朗读</button>
         )}
-        {onReciteToggle && (
+        {onReciteToggle && lang !== 'en' && (
           <button
             className={`btn-recite${reciting ? ' active' : ''}`}
             aria-pressed={reciting}
