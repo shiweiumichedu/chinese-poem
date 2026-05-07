@@ -73,7 +73,7 @@ export function isYes(text: string): boolean {
 interface ListenTabProps {
   voiceState: VoiceState
   startListening: (onResult: (text: string) => void, onIdle?: () => void) => void
-  speakLines: (lines: string[], onLineStart: (i: number) => void, onDone: () => void) => void
+  speakLines: (lines: string[], onLineStart: (i: number) => void, onDone: () => void, lang?: string) => void
   stop: () => void
   isSTTSupported: boolean
   libraryPoems: SavedPoem[]
