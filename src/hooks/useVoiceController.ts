@@ -41,13 +41,14 @@ export function useVoiceController() {
   const speakLines = useCallback((
     lines: string[],
     onLineStart: (index: number) => void,
-    onDone: () => void
+    onDone: () => void,
+    lang?: string
   ) => {
     const ctrl = getController()
     ctrl.speakLines(lines, onLineStart, () => {
       setVoiceState('idle')
       onDone()
-    }, ttsRateRef.current)
+    }, ttsRateRef.current, lang)
     setVoiceState(ctrl.state)
   }, [getController])
 
