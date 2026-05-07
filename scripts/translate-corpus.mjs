@@ -117,7 +117,7 @@ function runPass() {
 }
 
 const RETRY_DELAY_MS = 60_000
-const MAX_RETRIES = 20
+const MAX_RETRIES = 200
 
 // Write initial file if it doesn't exist yet
 if (!existsSync(OUTPUT_FILE)) writeFileSync(OUTPUT_FILE, JSON.stringify(existing))
