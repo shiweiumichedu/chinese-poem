@@ -31,7 +31,7 @@ export function useCorpus(): UseCorpusResult {
 
     async function load() {
       try {
-        const [rawPoems, authors] = await Promise.all([
+        const [rawPoems, authors, translations] = await Promise.all([
           fetch('/corpus.json').then(r => {
             if (!r.ok) throw new Error(`Failed to fetch corpus: ${r.status}`)
             return r.json() as Promise<CorpusPoem[]>
@@ -40,6 +40,9 @@ export function useCorpus(): UseCorpusResult {
             if (!r.ok) throw new Error(`Failed to fetch authors: ${r.status}`)
             return r.json() as Promise<Record<string, string>>
           }),
+          fetch('/translations.json').then(r =>
+            r.ok ? r.json() as Promise<Record<string, string[]>> : {}
+          ).catch(() => ({} as Record<string, string[]>)),
         ])
 
         if (cancelled) return
@@ -47,6 +50,7 @@ export function useCorpus(): UseCorpusResult {
         const joined = rawPoems.map((poem) => ({
           ...poem,
           authorBackground: authors[poem.author] ?? '',
+          ...(translations[poem.id] ? { englishLines: translations[poem.id] } : {}),
         }))
 
         const existing = new Set(joined.map(poemKey))

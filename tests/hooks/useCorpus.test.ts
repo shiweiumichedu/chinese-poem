@@ -13,8 +13,12 @@ const rawPoems = [
 ]
 const authors = { '李白': '唐代诗人' }
 
-function makeFetch(poemsData: unknown, authorsData: unknown) {
+function makeFetch(poemsData: unknown, authorsData: unknown, translationsData: unknown = null) {
   return vi.fn().mockImplementation((url: string) => {
+    if (url.includes('translations')) {
+      if (translationsData === null) return Promise.resolve({ ok: false, status: 404 })
+      return Promise.resolve({ ok: true, json: () => Promise.resolve(translationsData) })
+    }
     const data = url.includes('authors') ? authorsData : poemsData
     return Promise.resolve({
       ok: true,
@@ -111,13 +115,27 @@ describe('useCorpus', () => {
     expect(result.current.corpus).toHaveLength(0)
   })
 
+  it('merges englishLines from translations.json into corpus poems', async () => {
+    const translations = { '1': ['Before the bed, the moonlight shines'] }
+    vi.stubGlobal('fetch', makeFetch(rawPoems, authors, translations))
+
+    const { result } = renderHook(() => useCorpus())
+
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    const poem = result.current.corpus.find(p => p.id === '1')
+    expect(poem?.englishLines).toEqual(['Before the bed, the moonlight shines'])
+  })
+
   it('does not update state after unmount', async () => {
     let resolvePoems!: (val: unknown) => void
     let resolveAuthors!: (val: unknown) => void
+    let resolveTranslations!: (val: unknown) => void
 
     vi.stubGlobal('fetch', vi.fn()
       .mockImplementationOnce(() => new Promise(r => { resolvePoems = r }))
       .mockImplementationOnce(() => new Promise(r => { resolveAuthors = r }))
+      .mockImplementationOnce(() => new Promise(r => { resolveTranslations = r }))
     )
 
     const { result, unmount } = renderHook(() => useCorpus())
@@ -129,6 +147,7 @@ describe('useCorpus', () => {
     await act(async () => {
       resolvePoems({ ok: true, json: () => Promise.resolve([]) })
       resolveAuthors({ ok: true, json: () => Promise.resolve({}) })
+      resolveTranslations({ ok: false, status: 404 })
     })
 
     // No assertion needed beyond "no throw" — the cancelled flag prevented setState

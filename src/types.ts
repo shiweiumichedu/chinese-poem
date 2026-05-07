@@ -5,6 +5,7 @@ export interface CorpusPoem {
   dynasty: 'tang' | 'song' | 'ming'
   authorBackground: string
   lines: string[]
+  englishLines?: string[]
 }
 
 export interface SavedPoem extends CorpusPoem {
@@ -13,7 +14,6 @@ export interface SavedPoem extends CorpusPoem {
   rating?: number // 1-5 star rating
   boldLines?: number[]
   charAnnotations?: CharAnnotation[]
-  englishLines?: string[]
 }
 
 export interface CharAnnotation {

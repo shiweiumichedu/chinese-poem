@@ -15,7 +15,8 @@
     "test:watch": "vitest",
     "coverage": "vitest run --coverage",
     "build:corpus": "node scripts/build-corpus.mjs",
-    "translate:saved": "node scripts/translate-saved.mjs"
+    "translate:saved": "node scripts/translate-saved.mjs",
+    "translate:corpus": "node scripts/translate-corpus.mjs"
   },
   "dependencies": {
     "@capacitor-community/keep-awake": "^8.0.1",
