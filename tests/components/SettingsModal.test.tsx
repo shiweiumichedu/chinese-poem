@@ -31,9 +31,9 @@ function makeProps(overrides = {}) {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  global.URL.createObjectURL = vi.fn().mockReturnValue('blob:test')
-  global.URL.revokeObjectURL = vi.fn()
-  global.alert = vi.fn()
+  globalThis.URL.createObjectURL = vi.fn().mockReturnValue('blob:test')
+  globalThis.URL.revokeObjectURL = vi.fn()
+  globalThis.alert = vi.fn()
 })
 
 describe('SettingsModal', () => {
@@ -81,7 +81,7 @@ describe('SettingsModal', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '导出诗库' }))
 
-    expect(global.URL.createObjectURL).toHaveBeenCalledWith(expect.any(Blob))
+    expect(globalThis.URL.createObjectURL).toHaveBeenCalledWith(expect.any(Blob))
     expect(mockClick).toHaveBeenCalled()
     expect(mockEl!.download).toBe('library.json')
 
@@ -115,7 +115,7 @@ describe('SettingsModal', () => {
     const input = screen.getByLabelText('导入翻译文件')
     fireEvent.change(input, { target: { files: [file] } })
 
-    await waitFor(() => expect(global.alert).toHaveBeenCalledWith(
+    await waitFor(() => expect(globalThis.alert).toHaveBeenCalledWith(
       expect.stringContaining('格式错误')
     ))
     expect(savePoem).not.toHaveBeenCalled()
@@ -129,7 +129,7 @@ describe('SettingsModal', () => {
     render(<SettingsModal {...makeProps()} />)
     fireEvent.change(screen.getByLabelText('导入翻译文件'), { target: { files: [file] } })
 
-    await waitFor(() => expect(global.alert).toHaveBeenCalledWith(
+    await waitFor(() => expect(globalThis.alert).toHaveBeenCalledWith(
       expect.stringContaining('未找到')
     ))
     expect(savePoem).not.toHaveBeenCalled()
