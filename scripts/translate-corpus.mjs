@@ -70,37 +70,70 @@ function translateBatch(batch) {
 }
 
 const translations = { ...existing }
-let successCount = 0
-let failCount = 0
-const batches = []
-for (let i = 0; i < untranslated.length; i += BATCH_SIZE) {
-  batches.push(untranslated.slice(i, i + BATCH_SIZE))
-}
+let totalSuccess = 0
+let totalFail = 0
 
-for (let i = 0; i < batches.length; i++) {
-  const batch = batches[i]
-  process.stdout.write(`Batch ${i + 1}/${batches.length} (${batch.length} poems)... `)
-  try {
-    const results = translateBatch(batch)
-    for (const r of results) {
-      const orig = batch.find(p => p.id === r.id)
-      if (r.id && Array.isArray(r.englishLines) && orig) {
-        if (r.englishLines.length === orig.lines.length) {
-          translations[r.id] = r.englishLines
-          successCount++
-        } else {
-          console.warn(`  ⚠ "${orig.title}": expected ${orig.lines.length} lines, got ${r.englishLines.length} — skipped`)
-          failCount++
+function runPass() {
+  const current = JSON.parse(readFileSync(OUTPUT_FILE, 'utf8'))
+  const remaining = slice.filter(p => !current[p.id])
+  if (remaining.length === 0) return 0
+
+  const batches = []
+  for (let i = 0; i < remaining.length; i += BATCH_SIZE) {
+    batches.push(remaining.slice(i, i + BATCH_SIZE))
+  }
+
+  let passSuccess = 0
+  let passFail = 0
+
+  for (let i = 0; i < batches.length; i++) {
+    const batch = batches[i]
+    process.stdout.write(`Batch ${i + 1}/${batches.length} (${batch.length} poems)... `)
+    try {
+      const results = translateBatch(batch)
+      for (const r of results) {
+        const orig = batch.find(p => p.id === r.id)
+        if (r.id && Array.isArray(r.englishLines) && orig) {
+          if (r.englishLines.length === orig.lines.length) {
+            current[r.id] = r.englishLines
+            passSuccess++
+          } else {
+            console.warn(`  ⚠ "${orig.title}": expected ${orig.lines.length} lines, got ${r.englishLines.length} — skipped`)
+            passFail++
+          }
         }
       }
+      console.log(`✓ ${results.length} translated`)
+      writeFileSync(OUTPUT_FILE, JSON.stringify(current))
+    } catch (err) {
+      console.log(`✗ FAILED: ${err.message}`)
+      passFail += batch.length
     }
-    console.log(`✓ ${results.length} translated`)
-    // Write after each batch so progress is preserved if interrupted
-    writeFileSync(OUTPUT_FILE, JSON.stringify(translations))
-  } catch (err) {
-    console.log(`✗ FAILED: ${err.message}`)
-    failCount += batch.length
   }
+
+  totalSuccess += passSuccess
+  totalFail = passFail
+  return passFail
+}
+
+const RETRY_DELAY_MS = 60_000
+const MAX_RETRIES = 20
+
+// Write initial file if it doesn't exist yet
+if (!existsSync(OUTPUT_FILE)) writeFileSync(OUTPUT_FILE, JSON.stringify(existing))
+
+for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+  const remaining = slice.filter(p => !JSON.parse(readFileSync(OUTPUT_FILE, 'utf8'))[p.id])
+  if (remaining.length === 0) break
+
+  if (attempt > 1) {
+    console.log(`\nRetry ${attempt - 1}/${MAX_RETRIES - 1} — ${remaining.length} poems remaining. Waiting 60s...`)
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, RETRY_DELAY_MS)
+    console.log('Retrying...')
+  }
+
+  const failed = runPass()
+  if (failed === 0) break
 }
 
 console.log(`\nDone! ${OUTPUT_FILE} now has ${Object.keys(translations).length} translations total.`)
