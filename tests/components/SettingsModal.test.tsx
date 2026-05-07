@@ -63,20 +63,27 @@ describe('SettingsModal', () => {
 
   it('export button triggers download with savedPoems JSON', () => {
     const mockClick = vi.fn()
-    const originalCreateElement = document.createElement.bind(document)
+    let mockEl: { href: string; download: string; click: ReturnType<typeof vi.fn> }
+
+    // Render before spying so React's own DOM setup is unaffected
+    render(<SettingsModal {...makeProps()} />)
+
+    const originalCreate = document.createElement.bind(document)
     vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
       if (tag === 'a') {
-        const el = { href: '', download: '', click: mockClick } as unknown as HTMLAnchorElement
-        return el
+        mockEl = { href: '', download: '', click: mockClick }
+        return mockEl as unknown as HTMLAnchorElement
       }
-      return originalCreateElement(tag)
+      return originalCreate(tag)
     })
+    vi.spyOn(document.body, 'appendChild').mockReturnValue(mockEl! as unknown as HTMLAnchorElement)
+    vi.spyOn(document.body, 'removeChild').mockReturnValue(mockEl! as unknown as HTMLAnchorElement)
 
-    render(<SettingsModal {...makeProps()} />)
     fireEvent.click(screen.getByRole('button', { name: '导出诗库' }))
 
     expect(global.URL.createObjectURL).toHaveBeenCalledWith(expect.any(Blob))
     expect(mockClick).toHaveBeenCalled()
+    expect(mockEl!.download).toBe('library.json')
 
     vi.restoreAllMocks()
   })

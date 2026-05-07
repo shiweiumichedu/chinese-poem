@@ -19,7 +19,9 @@ export function SettingsModal({ isOpen, onClose, savedPoems, onPoemAdded }: Sett
     const a = document.createElement('a')
     a.href = url
     a.download = 'library.json'
+    document.body.appendChild(a)
     a.click()
+    document.body.removeChild(a)
     URL.revokeObjectURL(url)
   }
 
