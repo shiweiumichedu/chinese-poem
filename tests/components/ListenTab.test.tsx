@@ -23,6 +23,8 @@ function makeProps(overrides = {}) {
     libraryPoems: [],
     ttsRate: 1.0,
     setTtsRate: vi.fn(),
+    lang: 'zh' as 'zh' | 'en',
+    setLang: vi.fn(),
     ...overrides,
   }
 }

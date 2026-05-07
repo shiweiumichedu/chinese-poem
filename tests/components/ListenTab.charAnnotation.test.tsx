@@ -30,6 +30,8 @@ function makeProps(overrides = {}) {
     ttsRate: 1.0,
     setTtsRate: vi.fn(),
     onPoemUpdated: vi.fn().mockResolvedValue(undefined),
+    lang: 'zh' as 'zh' | 'en',
+    setLang: vi.fn(),
     ...overrides,
   }
 }

@@ -73,7 +73,7 @@ export function isYes(text: string): boolean {
 interface ListenTabProps {
   voiceState: VoiceState
   startListening: (onResult: (text: string) => void, onIdle?: () => void) => void
-  speakLines: (lines: string[], onLineStart: (i: number) => void, onDone: () => void) => void
+  speakLines: (lines: string[], onLineStart: (i: number) => void, onDone: () => void, lang?: string) => void
   stop: () => void
   isSTTSupported: boolean
   libraryPoems: SavedPoem[]
@@ -81,6 +81,8 @@ interface ListenTabProps {
   ttsRate: number
   setTtsRate: (rate: number) => void
   onPoemUpdated?: () => Promise<void>
+  lang: 'zh' | 'en'
+  setLang: (lang: 'zh' | 'en') => void
 }
 
 export function ListenTab({
@@ -94,6 +96,8 @@ export function ListenTab({
   ttsRate,
   setTtsRate,
   onPoemUpdated = async () => {},
+  lang,
+  setLang,
 }: ListenTabProps) {
   const [currentPoem, setCurrentPoem] = useState<SavedPoem | null>(null)
   const [highlightedLine, setHighlightedLine] = useState<number | null>(null)
@@ -123,6 +127,9 @@ export function ListenTab({
   const hasRepeatRef = useRef(false)
   const reciteSessionRatingRef = useRef<number | undefined>(undefined)
 
+  const langRef = useRef(lang)
+  useEffect(() => { langRef.current = lang }, [lang])
+
   useEffect(() => { autoPlayRef.current = autoPlay }, [autoPlay])
   useEffect(() => { repeatPlayRef.current = repeatPlay }, [repeatPlay])
   useEffect(() => { libraryPoemsRef.current = libraryPoems }, [libraryPoems])
@@ -150,11 +157,15 @@ export function ListenTab({
       if (!current) return
       setTimeout(() => {
         if (manuallyStoppedRef.current) return
-        speakLines(
-          current.lines.map((l, i) => buildTtsLine(l, i, current.charAnnotations ?? [])),
-          (i) => setHighlightedLine(i),
-          handlePoemDone,
-        )
+        if (langRef.current === 'en' && current.englishLines) {
+          speakLines(current.englishLines, (i) => setHighlightedLine(i), handlePoemDone, 'en-US')
+        } else {
+          speakLines(
+            current.lines.map((l, i) => buildTtsLine(l, i, current.charAnnotations ?? [])),
+            (i) => setHighlightedLine(i),
+            handlePoemDone,
+          )
+        }
       }, 800)
       return
     }
@@ -186,9 +197,12 @@ export function ListenTab({
         setTimeout(() => {
           if (!autoPlayRef.current || manuallyStoppedRef.current) return
           speakLines(
-            next.lines.map((l, i) => buildTtsLine(l, i, next.charAnnotations ?? [])),
+            langRef.current === 'en' && next.englishLines
+              ? next.englishLines
+              : next.lines.map((l, i) => buildTtsLine(l, i, next.charAnnotations ?? [])),
             (i) => setHighlightedLine(i),
             handlePoemDone,
+            langRef.current === 'en' && next.englishLines ? 'en-US' : undefined,
           )
         }, pauseMs)
       })
@@ -404,12 +418,17 @@ export function ListenTab({
     } else if (results.length === 1) {
       setNotFound(false)
       setSearchMatches(null)
-      setPoem(results[0])
-      speakLines(
-        results[0].lines.map((l, i) => buildTtsLine(l, i, results[0].charAnnotations ?? [])),
-        (i) => setHighlightedLine(i),
-        handlePoemDone,
-      )
+      const poem = results[0]
+      setPoem(poem)
+      if (lang === 'en' && poem.englishLines) {
+        speakLines(poem.englishLines, (i) => setHighlightedLine(i), handlePoemDone, 'en-US')
+      } else {
+        speakLines(
+          poem.lines.map((l, i) => buildTtsLine(l, i, poem.charAnnotations ?? [])),
+          (i) => setHighlightedLine(i),
+          handlePoemDone,
+        )
+      }
     } else {
       setNotFound(false)
       setSearchMatches(results)
@@ -419,11 +438,15 @@ export function ListenTab({
   function handlePickMatch(match: SavedPoem) {
     setSearchMatches(null)
     setPoem(match)
-    speakLines(
-      match.lines.map((l, i) => buildTtsLine(l, i, match.charAnnotations ?? [])),
-      (i) => setHighlightedLine(i),
-      handlePoemDone,
-    )
+    if (lang === 'en' && match.englishLines) {
+      speakLines(match.englishLines, (i) => setHighlightedLine(i), handlePoemDone, 'en-US')
+    } else {
+      speakLines(
+        match.lines.map((l, i) => buildTtsLine(l, i, match.charAnnotations ?? [])),
+        (i) => setHighlightedLine(i),
+        handlePoemDone,
+      )
+    }
   }
 
   async function handleLineEdit(lineIndex: number, newText: string) {
@@ -682,13 +705,22 @@ export function ListenTab({
           poem={currentPoem}
           onPlay={(lines, onLineStart, onDone) => {
             stopRecitingSession()
-            // `lines` is always poem.lines verbatim from PoemPlayer.handlePlay; idx == lineIndex
-            const ttsLines = lines.map((l, idx) => buildTtsLine(l, idx, currentPoem.charAnnotations ?? []))
-            speakLines(
-              ttsLines,
-              (i) => { setHighlightedLine(i); onLineStart(i) },
-              () => { onDone(); setHighlightedLine(null); handlePoemDone() },
-            )
+            if (lang === 'en' && currentPoem.englishLines) {
+              speakLines(
+                currentPoem.englishLines,
+                (i) => { setHighlightedLine(i); onLineStart(i) },
+                () => { onDone(); setHighlightedLine(null); handlePoemDone() },
+                'en-US'
+              )
+            } else {
+              // `lines` is always poem.lines verbatim from PoemPlayer.handlePlay; idx == lineIndex
+              const ttsLines = lines.map((l, idx) => buildTtsLine(l, idx, currentPoem.charAnnotations ?? []))
+              speakLines(
+                ttsLines,
+                (i) => { setHighlightedLine(i); onLineStart(i) },
+                () => { onDone(); setHighlightedLine(null); handlePoemDone() },
+              )
+            }
           }}
           onStop={() => { manuallyStoppedRef.current = true; stopRecitingSession(); stop() }}
           isPlaying={voiceState !== 'idle' || reciting}
@@ -699,8 +731,12 @@ export function ListenTab({
           onLineBoldToggle={handleLineBoldToggle}
           onSpeakLine={(lineIndex) => {
             stop()
-            const ttsText = buildTtsLine(currentPoem.lines[lineIndex], lineIndex, currentPoem.charAnnotations ?? [])
-            speakLines([ttsText], () => {}, () => {})
+            if (lang === 'en' && currentPoem.englishLines?.[lineIndex]) {
+              speakLines([currentPoem.englishLines[lineIndex]], () => {}, () => {}, 'en-US')
+            } else {
+              const ttsText = buildTtsLine(currentPoem.lines[lineIndex], lineIndex, currentPoem.charAnnotations ?? [])
+              speakLines([ttsText], () => {}, () => {})
+            }
           }}
           autoPlay={autoPlay}
           onAutoPlayToggle={toggleAutoPlay}
@@ -713,6 +749,8 @@ export function ListenTab({
           onCharAnnotate={handleCharAnnotate}
           onCharAnnotateRemove={handleCharAnnotateRemove}
           onRate={currentPoem ? handleRate : undefined}
+          lang={lang}
+          setLang={setLang}
         />
       )}
     </div>

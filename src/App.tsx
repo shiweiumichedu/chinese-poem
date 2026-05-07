@@ -5,12 +5,19 @@ import { listPoems, savePoem } from './data/PoemLibrary'
 import { getMissingSeeds, SEED_POEMS } from './data/seedPoems'
 import { ListenTab } from './components/ListenTab'
 import { LibraryTab } from './components/LibraryTab'
+import { SettingsModal } from './components/SettingsModal'
 import type { AppTab, SavedPoem } from './types'
+
+const LANG_KEY = 'poem-lang'
 
 function App() {
   const [activeTab, setActiveTab] = useState<AppTab>('listen')
   const [libraryPoems, setLibraryPoems] = useState<SavedPoem[]>([])
   const [selectedPoem, setSelectedPoem] = useState<SavedPoem | undefined>(undefined)
+  const [lang, setLangState] = useState<'zh' | 'en'>(
+    () => (localStorage.getItem(LANG_KEY) as 'zh' | 'en' | null) ?? 'zh'
+  )
+  const [showSettings, setShowSettings] = useState(false)
 
   const { corpus, loading: corpusLoading, error: corpusError } = useCorpus()
   const { voiceState, startListening, speakLines, stop, isSTTSupported, ttsRate, setTtsRate } = useVoiceController()
@@ -28,6 +35,11 @@ function App() {
       }
     })
   }, [])
+
+  function handleSetLang(l: 'zh' | 'en') {
+    localStorage.setItem(LANG_KEY, l)
+    setLangState(l)
+  }
 
   function handlePoemSelect(poem: SavedPoem) {
     setSelectedPoem(poem)
@@ -63,6 +75,8 @@ function App() {
             ttsRate={ttsRate}
             setTtsRate={setTtsRate}
             onPoemUpdated={handlePoemAdded}
+            lang={lang}
+            setLang={handleSetLang}
           />
         ) : (
           <LibraryTab
@@ -89,7 +103,20 @@ function App() {
         >
           📚 诗库
         </button>
+        <button
+          className="tab-button btn-settings-gear"
+          aria-label="设置"
+          onClick={() => setShowSettings(true)}
+        >
+          ⚙
+        </button>
       </nav>
+      <SettingsModal
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        savedPoems={libraryPoems}
+        onPoemAdded={handlePoemAdded}
+      />
     </div>
   )
 }

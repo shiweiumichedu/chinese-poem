@@ -10,7 +10,7 @@ import { findPoemOnline, searchResultToSavedPoem, type SearchResult } from '../u
 interface LibraryTabProps {
   voiceState: VoiceState
   startListening: (onResult: (text: string) => void) => void
-  speakLines: (lines: string[], onLineStart: (i: number) => void, onDone: () => void) => void
+  speakLines: (lines: string[], onLineStart: (i: number) => void, onDone: () => void, lang?: string) => void
   stop: () => void
   isSTTSupported: boolean
   corpus: CorpusPoem[]

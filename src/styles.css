@@ -469,3 +469,123 @@ button.player-star:disabled { cursor: default; }
   to { transform: rotate(360deg); }
 }
 
+/* ── Settings Modal ─────────────────────────────────── */
+
+.settings-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.settings-modal {
+  background: #1a1a3e;
+  border-radius: 12px;
+  padding: 24px;
+  width: 320px;
+  max-width: calc(100vw - 48px);
+}
+
+.settings-modal h2 {
+  margin: 0 0 16px;
+  font-size: 20px;
+  color: #e0e0ff;
+}
+
+.settings-section {
+  margin-bottom: 24px;
+}
+
+.settings-section h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+  color: #b0b0d0;
+}
+
+.settings-description {
+  font-size: 13px;
+  color: #8080a0;
+  margin: 0 0 12px;
+}
+
+.settings-description code {
+  background: #2a2a5a;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 12px;
+}
+
+.btn-settings-action {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 8px;
+  background: #2a2a5a;
+  border: 1px solid #4a4a8a;
+  border-radius: 8px;
+  color: #e0e0ff;
+  font-size: 15px;
+  cursor: pointer;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.btn-settings-action:hover { background: #3a3a7a; }
+
+.btn-settings-import { cursor: pointer; }
+
+.btn-settings-import input[type="file"] { display: none; }
+
+.btn-settings-close {
+  width: 100%;
+  padding: 10px;
+  background: transparent;
+  border: 1px solid #4a4a6a;
+  border-radius: 8px;
+  color: #8080a0;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.btn-settings-close:hover { background: #2a2a4a; }
+
+/* ── Language toggle + gear ─────────────────────────── */
+
+.btn-settings-gear {
+  font-size: 20px;
+  color: #8080a0;
+  min-width: 44px;
+}
+
+.btn-lang {
+  padding: 8px 14px;
+  background: #2a2a5a;
+  border: 1px solid #4a4a8a;
+  border-radius: 8px;
+  color: #b0b0d0;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.btn-lang.active {
+  background: #3a5a8a;
+  border-color: #6a9aca;
+  color: #e0f0ff;
+}
+
+.btn-lang.unavailable {
+  opacity: 0.35;
+}
+
+.english-line {
+  color: #a0a0c0;
+  font-size: 14px;
+  font-style: italic;
+  margin: -6px 0 14px;
+  text-align: center;
+}
+
