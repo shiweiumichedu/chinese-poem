@@ -418,12 +418,17 @@ export function ListenTab({
     } else if (results.length === 1) {
       setNotFound(false)
       setSearchMatches(null)
-      setPoem(results[0])
-      speakLines(
-        results[0].lines.map((l, i) => buildTtsLine(l, i, results[0].charAnnotations ?? [])),
-        (i) => setHighlightedLine(i),
-        handlePoemDone,
-      )
+      const poem = results[0]
+      setPoem(poem)
+      if (lang === 'en' && poem.englishLines) {
+        speakLines(poem.englishLines, (i) => setHighlightedLine(i), handlePoemDone, 'en-US')
+      } else {
+        speakLines(
+          poem.lines.map((l, i) => buildTtsLine(l, i, poem.charAnnotations ?? [])),
+          (i) => setHighlightedLine(i),
+          handlePoemDone,
+        )
+      }
     } else {
       setNotFound(false)
       setSearchMatches(results)
@@ -433,11 +438,15 @@ export function ListenTab({
   function handlePickMatch(match: SavedPoem) {
     setSearchMatches(null)
     setPoem(match)
-    speakLines(
-      match.lines.map((l, i) => buildTtsLine(l, i, match.charAnnotations ?? [])),
-      (i) => setHighlightedLine(i),
-      handlePoemDone,
-    )
+    if (lang === 'en' && match.englishLines) {
+      speakLines(match.englishLines, (i) => setHighlightedLine(i), handlePoemDone, 'en-US')
+    } else {
+      speakLines(
+        match.lines.map((l, i) => buildTtsLine(l, i, match.charAnnotations ?? [])),
+        (i) => setHighlightedLine(i),
+        handlePoemDone,
+      )
+    }
   }
 
   async function handleLineEdit(lineIndex: number, newText: string) {

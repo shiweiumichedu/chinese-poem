@@ -74,8 +74,11 @@ for (let i = 0; i < batches.length; i++) {
   try {
     const results = translateBatch(batch)
     for (const r of results) {
-      if (r.id && Array.isArray(r.englishLines)) {
+      const originalPoem = batch.find(p => p.id === r.id)
+      if (r.id && Array.isArray(r.englishLines) && originalPoem && r.englishLines.length === originalPoem.lines.length) {
         translationMap.set(r.id, r.englishLines)
+      } else if (r.id && Array.isArray(r.englishLines) && originalPoem && r.englishLines.length !== originalPoem.lines.length) {
+        console.warn(`  ⚠ Poem ${r.id} ("${originalPoem.title}"): expected ${originalPoem.lines.length} lines, got ${r.englishLines.length} — skipped`)
       }
     }
     console.log(`✓ ${results.length} translated`)
