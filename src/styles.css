@@ -553,3 +553,31 @@ button.player-star:disabled { cursor: default; }
 
 .btn-settings-close:hover { background: #2a2a4a; }
 
+/* ── Language toggle + gear ─────────────────────────── */
+
+.btn-settings-gear {
+  font-size: 20px;
+  color: #8080a0;
+  min-width: 44px;
+}
+
+.btn-lang {
+  padding: 8px 14px;
+  background: #2a2a5a;
+  border: 1px solid #4a4a8a;
+  border-radius: 8px;
+  color: #b0b0d0;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.btn-lang.active {
+  background: #3a5a8a;
+  border-color: #6a9aca;
+  color: #e0f0ff;
+}
+
+.btn-lang.unavailable {
+  opacity: 0.35;
+}
+
