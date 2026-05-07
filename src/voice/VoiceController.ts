@@ -14,7 +14,7 @@ function getInterLinePauseMultiplier(rate: number): number {
 export interface VoiceController {
   state: VoiceState
   startListening(onResult: (text: string) => void, onIdle?: () => void): void
-  speakLines(lines: string[], onLineStart: (index: number) => void, onDone: () => void, rate?: number): void
+  speakLines(lines: string[], onLineStart: (index: number) => void, onDone: () => void, rate?: number, lang?: string): void
   stop(): void
   isSTTSupported(): boolean
   isTTSSupported(): boolean
@@ -132,7 +132,7 @@ export function createVoiceController(): VoiceController {
       }
     },
 
-    speakLines(lines, onLineStart, onDone, rate = 1.0) {
+    speakLines(lines, onLineStart, onDone, rate = 1.0, lang) {
       if (!window.speechSynthesis || lines.length === 0) {
         onDone()
         return
@@ -161,7 +161,7 @@ export function createVoiceController(): VoiceController {
           synthesis.resume()
         }
         const utterance = new SpeechSynthesisUtterance(lines[index])
-        utterance.lang = 'zh-CN'
+        utterance.lang = lang ?? 'zh-CN'
         utterance.rate = rate
         utterance.onstart = () => {
           if (generation === speakGeneration) onLineStart(index)

@@ -229,4 +229,36 @@ describe('VoiceController', () => {
     expect(utts[0].rate).toBe(1.0)
     vi.useRealTimers()
   })
+
+  it('speakLines uses zh-CN lang by default', () => {
+    vi.useFakeTimers()
+    type MockUtt = { text: string; lang: string; onstart: (() => void) | null; onend: (() => void) | null; onerror: (() => void) | null }
+    const utts: MockUtt[] = []
+    setWindowProp('SpeechSynthesisUtterance', class {
+      text: string; lang = ''; onstart: (() => void) | null = null
+      onend: (() => void) | null = null; onerror: (() => void) | null = null
+      constructor(t: string) { this.text = t; utts.push(this) }
+    })
+    const ctrl = createVoiceController()
+    ctrl.speakLines(['床前明月光'], vi.fn(), vi.fn())
+    vi.runOnlyPendingTimers()
+    expect(utts[0].lang).toBe('zh-CN')
+    vi.useRealTimers()
+  })
+
+  it('speakLines uses provided lang when specified', () => {
+    vi.useFakeTimers()
+    type MockUtt = { text: string; lang: string; onstart: (() => void) | null; onend: (() => void) | null; onerror: (() => void) | null }
+    const utts: MockUtt[] = []
+    setWindowProp('SpeechSynthesisUtterance', class {
+      text: string; lang = ''; onstart: (() => void) | null = null
+      onend: (() => void) | null = null; onerror: (() => void) | null = null
+      constructor(t: string) { this.text = t; utts.push(this) }
+    })
+    const ctrl = createVoiceController()
+    ctrl.speakLines(['Before the bed, the moonlight'], vi.fn(), vi.fn(), 1.0, 'en-US')
+    vi.runOnlyPendingTimers()
+    expect(utts[0].lang).toBe('en-US')
+    vi.useRealTimers()
+  })
 })

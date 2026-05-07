@@ -13,6 +13,7 @@ export interface SavedPoem extends CorpusPoem {
   rating?: number // 1-5 star rating
   boldLines?: number[]
   charAnnotations?: CharAnnotation[]
+  englishLines?: string[]
 }
 
 export interface CharAnnotation {
