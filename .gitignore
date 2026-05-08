@@ -9,3 +9,5 @@ test-debug.js
 .DS_Store
 ios/App/App.xcarchive/
 ios/App/export/
+public/translations.json
+*-translated.json

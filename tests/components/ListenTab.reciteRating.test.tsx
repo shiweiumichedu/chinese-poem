@@ -9,6 +9,8 @@ vi.mock('../../src/data/PoemLibrary', () => ({
   listPoems: vi.fn().mockResolvedValue([]),
 }))
 
+afterEach(() => localStorage.clear())
+
 const poem: SavedPoem = {
   id: '1',
   title: '静夜思',
