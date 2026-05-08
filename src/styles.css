@@ -151,6 +151,19 @@ body {
 }
 .poem-list-delete:hover { color: #cc6666; }
 .poem-list-title { font-size: 17px; color: #e8d5b7; }
+.badge-en {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 600;
+  line-height: 1;
+  padding: 2px 5px;
+  border-radius: 3px;
+  background: #3b82f6;
+  color: #fff;
+  vertical-align: middle;
+  margin-left: 6px;
+  letter-spacing: 0.03em;
+}
 .poem-list-meta { font-size: 13px; color: #8888aa; }
 .poem-list-lines { font-size: 13px; color: #6a6a8a; margin-top: 2px; }
 .empty-library { text-align: center; color: #8888aa; padding: 40px 16px; }

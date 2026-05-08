@@ -283,6 +283,9 @@ export function LibraryTab({
                     onClick={() => onPoemSelect(poem)}
                   >
                     <span className="poem-list-title">{poem.title}</span>
+                    {poem.englishLines && poem.englishLines.length > 0 && (
+                      <span className="badge-en" aria-label="英文翻译可用">EN</span>
+                    )}
                     <span className="poem-list-meta">
                       {poem.author} · {DYNASTY_LABEL[poem.dynasty] ?? poem.dynasty}
                     </span>
@@ -354,6 +357,9 @@ export function LibraryTab({
                       aria-label={`添加 ${poem.title}`}
                     >
                       <span className="browse-result-title">{poem.title}</span>
+                      {poem.englishLines && poem.englishLines.length > 0 && (
+                        <span className="badge-en" aria-label="英文翻译可用">EN</span>
+                      )}
                       <span className="browse-result-meta">
                         {poem.author} · {DYNASTY_LABEL[poem.dynasty] ?? poem.dynasty}
                       </span>
@@ -369,6 +375,9 @@ export function LibraryTab({
                     aria-label={`${poem.title}（已在诗库）`}
                   >
                     <span className="browse-result-title">{poem.title}</span>
+                    {poem.englishLines && poem.englishLines.length > 0 && (
+                      <span className="badge-en" aria-label="英文翻译可用">EN</span>
+                    )}
                     <span className="browse-result-meta">
                       {poem.author} · {DYNASTY_LABEL[poem.dynasty] ?? poem.dynasty}
                     </span>
