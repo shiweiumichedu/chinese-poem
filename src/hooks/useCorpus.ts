@@ -41,7 +41,7 @@ export function useCorpus(): UseCorpusResult {
             return r.json() as Promise<Record<string, string>>
           }),
           fetch('/translations.json').then(r =>
-            r.ok ? r.json() as Promise<Record<string, string[]>> : {}
+            r.ok ? r.json() as Promise<Record<string, string[]>> : {} as Record<string, string[]>
           ).catch(() => ({} as Record<string, string[]>)),
         ])
 

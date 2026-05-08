@@ -267,13 +267,17 @@ button.player-star:disabled { cursor: default; }
 .btn-repeat.active { background: #3a2f1a; border-color: #8a6f2a; color: #e8c888; }
 
 /* ── Next poem preview ── */
+.poem-nav-row {
+  margin-top: 16px; display: flex; gap: 8px;
+}
 .next-poem-preview {
-  margin-top: 16px; padding: 12px; background: #2a2a4a; border-radius: 8px;
+  padding: 12px; background: #2a2a4a; border-radius: 8px;
   border: 1px solid #3a3a5a; text-align: center;
-  cursor: pointer; width: 100%; transition: background 0.15s, border-color 0.15s;
+  cursor: pointer; flex: 1; transition: background 0.15s, border-color 0.15s;
 }
 .next-poem-preview:hover { background: #33335a; border-color: #5a5a8a; }
 .next-poem-preview:active { background: #3a3a6a; }
+.prev-poem-preview { text-align: center; }
 .next-poem-label { font-size: 12px; color: #8888aa; margin: 0 0 4px; }
 .next-poem-title { font-size: 16px; color: #e8d5b7; margin: 0 0 2px; }
 .next-poem-author { font-size: 12px; color: #8888aa; margin: 0; }
