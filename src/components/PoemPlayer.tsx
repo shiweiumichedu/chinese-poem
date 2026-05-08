@@ -53,12 +53,14 @@ interface PoemPlayerProps {
   onReciteToggle?: () => void
   nextPoem?: SavedPoem | null
   onNextPoem?: () => void
+  prevPoem?: SavedPoem | null
+  onPrevPoem?: () => void
   onRate?: (rating: number) => void
   lang?: 'zh' | 'en'
   setLang?: (lang: 'zh' | 'en') => void
 }
 
-export function PoemPlayer({ poem, onPlay, onStop, isPlaying, highlightedLine, ttsRate, setTtsRate, onLineEdit, onLineBoldToggle, onSpeakLine, autoPlay, onAutoPlayToggle, repeatPlay, onRepeatPlayToggle, reciting, onReciteToggle, onBack, nextPoem, onNextPoem, onCharAnnotate, onCharAnnotateRemove, onRate, lang, setLang }: PoemPlayerProps) {
+export function PoemPlayer({ poem, onPlay, onStop, isPlaying, highlightedLine, ttsRate, setTtsRate, onLineEdit, onLineBoldToggle, onSpeakLine, autoPlay, onAutoPlayToggle, repeatPlay, onRepeatPlayToggle, reciting, onReciteToggle, onBack, nextPoem, onNextPoem, prevPoem, onPrevPoem, onCharAnnotate, onCharAnnotateRemove, onRate, lang, setLang }: PoemPlayerProps) {
   const [internalHighlight, setInternalHighlight] = useState<number | null>(null)
   const [editingLine, setEditingLine] = useState<number | null>(null)
   const [editValue, setEditValue] = useState('')
@@ -371,12 +373,23 @@ export function PoemPlayer({ poem, onPlay, onStop, isPlaying, highlightedLine, t
           </button>
         )}
       </div>
-      {autoPlay && nextPoem && (
-        <button className="next-poem-preview" onClick={onNextPoem}>
-          <p className="next-poem-label">下一首 ›</p>
-          <p className="next-poem-title">{nextPoem.title}</p>
-          <p className="next-poem-author">{nextPoem.author}</p>
-        </button>
+      {(prevPoem || (autoPlay && nextPoem)) && (
+        <div className="poem-nav-row">
+          {prevPoem && (
+            <button className="next-poem-preview prev-poem-preview" onClick={onPrevPoem}>
+              <p className="next-poem-label">‹ 上一首</p>
+              <p className="next-poem-title">{prevPoem.title}</p>
+              <p className="next-poem-author">{prevPoem.author}</p>
+            </button>
+          )}
+          {autoPlay && nextPoem && (
+            <button className="next-poem-preview" onClick={onNextPoem}>
+              <p className="next-poem-label">下一首 ›</p>
+              <p className="next-poem-title">{nextPoem.title}</p>
+              <p className="next-poem-author">{nextPoem.author}</p>
+            </button>
+          )}
+        </div>
       )}
       {poem.authorBackground && (
         <div className="author-background">

@@ -546,7 +546,16 @@ export function ListenTab({
     setPoem(next)
   }
 
-  function getNextPoem(ratingOverride?: number): SavedPoem | null {
+  function handleJumpToPrev() {
+    const prev = getPrevPoem()
+    if (!prev) return
+    stopRecitingSession()
+    stop()
+    manuallyStoppedRef.current = false
+    setPoem(prev)
+  }
+
+  function getNeighborPoem(direction: 1 | -1, ratingOverride?: number): SavedPoem | null {
     const current = currentPoemRef.current
     if (!current) return null
     const poems = libraryPoemsRef.current
@@ -559,9 +568,20 @@ export function ListenTab({
     if (!availablePoems.length) {
       availablePoems = poems
     }
+    if (availablePoems.length <= 1) return null
 
     const idx = availablePoems.findIndex(p => p.id === current.id)
-    return availablePoems[(idx + 1) % availablePoems.length] || null
+    if (idx === -1) return null
+    const len = availablePoems.length
+    return availablePoems[(idx + direction + len) % len] || null
+  }
+
+  function getNextPoem(ratingOverride?: number): SavedPoem | null {
+    return getNeighborPoem(1, ratingOverride)
+  }
+
+  function getPrevPoem(): SavedPoem | null {
+    return getNeighborPoem(-1)
   }
 
   function toggleAutoPlay() {
@@ -746,6 +766,8 @@ export function ListenTab({
           onRepeatPlayToggle={toggleRepeatPlay}
           nextPoem={autoPlay && !repeatPlay ? getNextPoem() : null}
           onNextPoem={handleJumpToNext}
+          prevPoem={autoPlay && !repeatPlay ? getPrevPoem() : null}
+          onPrevPoem={handleJumpToPrev}
           onCharAnnotate={handleCharAnnotate}
           onCharAnnotateRemove={handleCharAnnotateRemove}
           onRate={currentPoem ? handleRate : undefined}

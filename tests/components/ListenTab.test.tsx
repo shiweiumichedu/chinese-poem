@@ -288,6 +288,52 @@ describe('ListenTab multi-match picker', () => {
     expect(screen.queryByText('静夜思二 — 测试')).not.toBeInTheDocument()
   })
 
+  it('shows 上一首 when autoplay is on with 2+ poems and clicking it jumps backward', () => {
+    localStorage.setItem('auto-play', 'true')
+    const speakLines = vi.fn()
+    const props = makeProps({
+      isSTTSupported: false,
+      speakLines,
+      libraryPoems: [poem, poem2],
+      initialPoem: poem2,
+    })
+    render(<ListenTab {...props} />)
+
+    const prevBtn = screen.getByRole('button', { name: /上一首/ })
+    expect(prevBtn).toBeInTheDocument()
+    expect(prevBtn).toHaveTextContent('静夜思')
+    expect(prevBtn).toHaveTextContent('李白')
+
+    fireEvent.click(prevBtn)
+    expect(screen.getByRole('heading', { name: '静夜思' })).toBeInTheDocument()
+    localStorage.removeItem('auto-play')
+  })
+
+  it('hides 上一首 when autoplay is off', () => {
+    localStorage.removeItem('auto-play')
+    const props = makeProps({
+      isSTTSupported: false,
+      libraryPoems: [poem, poem2],
+      initialPoem: poem,
+    })
+    render(<ListenTab {...props} />)
+    expect(screen.queryByRole('button', { name: /上一首/ })).not.toBeInTheDocument()
+  })
+
+  it('hides 上一首 when only one poem is in the rating tier', () => {
+    localStorage.setItem('auto-play', 'true')
+    const onlyPoem = { ...poem, rating: 5 }
+    const otherTier = { ...poem2, rating: 3 }
+    const props = makeProps({
+      isSTTSupported: false,
+      libraryPoems: [onlyPoem, otherTier],
+      initialPoem: onlyPoem,
+    })
+    render(<ListenTab {...props} />)
+    expect(screen.queryByRole('button', { name: /上一首/ })).not.toBeInTheDocument()
+    localStorage.removeItem('auto-play')
+  })
+
   it('speaks tapped line when a line is clicked', () => {
     const speakLines = vi.fn()
     const props = makeProps({ isSTTSupported: false, speakLines, libraryPoems: [poem] })
