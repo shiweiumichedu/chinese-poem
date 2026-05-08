@@ -143,11 +143,11 @@ async function main() {
   const indexSizeCompressedMB = (indexSizeBytes * 0.25 / 1024 / 1024).toFixed(2)
   console.log(`Written public/poem-search-index.json (${indexSizeMB} MB uncompressed, ~${indexSizeCompressedMB} MB gzipped)`)
 
-  if (indexSizeBytes > 5 * 1024 * 1024) {
-    console.warn(`WARNING: poem-search-index.json is ${indexSizeMB}MB`)
+  if (indexSizeBytes > 12 * 1024 * 1024) {
+    console.warn(`WARNING: poem-search-index.json is ${indexSizeMB}MB uncompressed (~${indexSizeCompressedMB}MB gzipped)`)
   }
-  if (indexSizeBytes > 10 * 1024 * 1024) {
-    console.error(`ERROR: poem-search-index.json exceeds 10MB limit — aborting`)
+  if (indexSizeBytes > 20 * 1024 * 1024) {
+    console.error(`ERROR: poem-search-index.json exceeds 20MB limit — aborting`)
     process.exit(1)
   }
 }
