@@ -74,12 +74,16 @@ export async function findPoemOnline(query: string): Promise<SearchResult[]> {
 
   const candidates = [...exactTitle, ...partialTitle, ...authorMatch].slice(0, 10)
 
+  const seen = new Set<string>()
   const results: SearchResult[] = []
   for (const entry of candidates) {
     try {
       const batch = await fetchBatch(entry.d, entry.f)
       const poem = batch.find((p) => normalize(p.title) === normalize(entry.t))
       if (!poem) continue
+      const key = `${entry.t}|${entry.a}`
+      if (seen.has(key)) continue
+      seen.add(key)
       results.push({
         title: entry.t,
         author: entry.a,
@@ -88,6 +92,7 @@ export async function findPoemOnline(query: string): Promise<SearchResult[]> {
       })
       if (results.length >= 5) break
     } catch {
+      // network or parse error for this batch — skip entry
     }
   }
 
