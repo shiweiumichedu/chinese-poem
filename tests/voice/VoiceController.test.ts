@@ -246,6 +246,37 @@ describe('VoiceController', () => {
     vi.useRealTimers()
   })
 
+  it('stop() during speech suppresses onerror from canceled utterance', () => {
+    vi.useFakeTimers()
+    type MockUtt = {
+      text: string; lang: string; rate: number
+      onstart: (() => void) | null; onend: (() => void) | null; onerror: (() => void) | null
+    }
+    const utts: MockUtt[] = []
+    setWindowProp('SpeechSynthesisUtterance', class {
+      text: string; lang = ''; rate = 1.0
+      onstart: (() => void) | null = null
+      onend: (() => void) | null = null
+      onerror: (() => void) | null = null
+      constructor(t: string) { this.text = t; utts.push(this) }
+    })
+    const onDone = vi.fn()
+    const ctrl = createVoiceController()
+
+    ctrl.speakLines(['床前明月光', '疑是地上霜'], vi.fn(), onDone)
+    vi.runOnlyPendingTimers()
+    expect(utts.length).toBe(1)
+
+    // User stops mid-utterance — speechSynthesis.cancel() will fire onerror
+    // on the in-flight utterance. That callback must NOT call onDone.
+    ctrl.stop()
+    utts[0].onerror?.()
+
+    expect(onDone).not.toHaveBeenCalled()
+    expect(ctrl.state).toBe('idle')
+    vi.useRealTimers()
+  })
+
   it('speakLines uses provided lang when specified', () => {
     vi.useFakeTimers()
     type MockUtt = { text: string; lang: string; onstart: (() => void) | null; onend: (() => void) | null; onerror: (() => void) | null }

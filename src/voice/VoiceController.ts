@@ -190,6 +190,7 @@ export function createVoiceController(): VoiceController {
 
     stop() {
       listenGeneration++
+      speakGeneration++  // prevent onerror from canceled utterances calling onDone
       if (recognition) {
         recognition.abort()
         recognition = null
