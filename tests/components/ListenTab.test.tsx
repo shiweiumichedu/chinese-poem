@@ -3,6 +3,8 @@ import { act } from 'react'
 import { ListenTab } from '../../src/components/ListenTab'
 import type { SavedPoem, VoiceState } from '../../src/types'
 
+afterEach(() => localStorage.clear())
+
 const poem: SavedPoem = {
   id: '1',
   title: '静夜思',
@@ -306,11 +308,9 @@ describe('ListenTab multi-match picker', () => {
 
     fireEvent.click(prevBtn)
     expect(screen.getByRole('heading', { name: '静夜思' })).toBeInTheDocument()
-    localStorage.removeItem('auto-play')
   })
 
   it('hides 上一首 when autoplay is off', () => {
-    localStorage.removeItem('auto-play')
     const props = makeProps({
       isSTTSupported: false,
       libraryPoems: [poem, poem2],
@@ -331,7 +331,6 @@ describe('ListenTab multi-match picker', () => {
     })
     render(<ListenTab {...props} />)
     expect(screen.queryByRole('button', { name: /上一首/ })).not.toBeInTheDocument()
-    localStorage.removeItem('auto-play')
   })
 
   it('speaks tapped line when a line is clicked', () => {

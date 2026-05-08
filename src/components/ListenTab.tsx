@@ -170,23 +170,7 @@ export function ListenTab({
       return
     }
 
-    const poems = libraryPoemsRef.current
-    const current = currentPoemRef.current
-    if (!poems.length || !current) return
-    
-    // Filter poems by rating if current poem has a rating
-    const targetRating = current.rating
-    let availablePoems = targetRating !== undefined 
-      ? poems.filter(p => p.rating === targetRating)
-      : poems
-    
-    if (!availablePoems.length) {
-      // Fall back to all poems if no poems with same rating
-      availablePoems = poems
-    }
-    
-    const idx = availablePoems.findIndex(p => p.id === current.id)
-    const next = availablePoems[(idx + 1) % availablePoems.length]
+    const next = getNeighborPoem(1)
     if (!next) return
     setTimeout(() => {
       flushSync(() => { setPoem(next) })
@@ -537,22 +521,13 @@ export function ListenTab({
     )
   }
 
-  function handleJumpToNext() {
-    const next = getNextPoem()
-    if (!next) return
+  function handleJump(direction: 1 | -1) {
+    const target = getNeighborPoem(direction)
+    if (!target) return
     stopRecitingSession()
     stop()
     manuallyStoppedRef.current = false
-    setPoem(next)
-  }
-
-  function handleJumpToPrev() {
-    const prev = getPrevPoem()
-    if (!prev) return
-    stopRecitingSession()
-    stop()
-    manuallyStoppedRef.current = false
-    setPoem(prev)
+    setPoem(target)
   }
 
   function getNeighborPoem(direction: 1 | -1, ratingOverride?: number): SavedPoem | null {
@@ -573,7 +548,7 @@ export function ListenTab({
     const idx = availablePoems.findIndex(p => p.id === current.id)
     if (idx === -1) return null
     const len = availablePoems.length
-    return availablePoems[(idx + direction + len) % len] || null
+    return availablePoems[(idx + direction + len) % len]
   }
 
   function getNextPoem(ratingOverride?: number): SavedPoem | null {
@@ -765,9 +740,9 @@ export function ListenTab({
           repeatPlay={repeatPlay}
           onRepeatPlayToggle={toggleRepeatPlay}
           nextPoem={autoPlay && !repeatPlay ? getNextPoem() : null}
-          onNextPoem={handleJumpToNext}
+          onNextPoem={() => handleJump(1)}
           prevPoem={autoPlay && !repeatPlay ? getPrevPoem() : null}
-          onPrevPoem={handleJumpToPrev}
+          onPrevPoem={() => handleJump(-1)}
           onCharAnnotate={handleCharAnnotate}
           onCharAnnotateRemove={handleCharAnnotateRemove}
           onRate={currentPoem ? handleRate : undefined}
