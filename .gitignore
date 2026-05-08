@@ -6,3 +6,6 @@ public/authors.json
 .claude/
 CLAUDE.md
 test-debug.js
+.DS_Store
+ios/App/App.xcarchive/
+ios/App/export/
