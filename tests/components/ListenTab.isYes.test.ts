@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { isYes } from '../../src/components/ListenTab'
+import { isYes } from '../../src/utils/reciteMatch'
 
 describe('isYes', () => {
   it('returns true for 是', () => expect(isYes('是')).toBe(true))

@@ -1,4 +1,4 @@
-import { isReciteMatch } from '../../src/components/ListenTab'
+import { isReciteMatch } from '../../src/utils/reciteMatch'
 
 describe('isReciteMatch - 翘舌 normalization', () => {
   it('accepts zh→z confusion: 知 (zhi) matched as 子 (zi)', () =>

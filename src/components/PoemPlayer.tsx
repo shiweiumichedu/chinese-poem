@@ -2,22 +2,7 @@ import { useState, useRef, useEffect, Fragment } from 'react'
 import type { SavedPoem } from '../types'
 import { DYNASTY_LABEL } from '../constants'
 import { buildDisplayLines } from '../utils/poemLineDisplay'
-
-type Rect = { top: number; bottom: number; height: number }
-
-export function computePageTurnScroll(
-  highlightedRect: Rect,
-  containerRect: Rect,
-  controlsVisible: boolean,
-  currentScrollTop: number,
-): number | null {
-  if (controlsVisible) return null
-  const threshold = containerRect.height * 0.35
-  if (highlightedRect.bottom > containerRect.bottom - threshold) {
-    return currentScrollTop + (highlightedRect.top - containerRect.top) - 20
-  }
-  return null
-}
+import { computePageTurnScroll } from '../utils/poemPlayerScroll'
 
 const SPEED_PRESETS = [
   { label: '极慢', rate: 0.25 },
@@ -113,11 +98,6 @@ export function PoemPlayer({ poem, onPlay, onStop, isPlaying, highlightedLine, t
       }
     }
   }, [])
-
-  useEffect(() => {
-    setAnnotationTarget(null)
-    setPendingRating(null)
-  }, [poem.id])
 
   const displayLines = buildDisplayLines(poem.lines)
 

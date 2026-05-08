@@ -80,14 +80,16 @@ describe('PoemPlayer star rating', () => {
     expect(onRate).toHaveBeenCalledWith(3)
   })
 
-  it('hides confirmation row when poem changes', () => {
+  it('hides confirmation row when poem changes (via key remount)', () => {
+    // Caller resets PoemPlayer's internal state on poem swap by giving it
+    // a key={poem.id} — see ListenTab. Rerender with a new key forces remount.
     const onRate = vi.fn()
-    const { rerender } = render(<PoemPlayer {...defaultProps} onRate={onRate} />)
+    const { rerender } = render(<PoemPlayer key={poem.id} {...defaultProps} onRate={onRate} />)
     fireEvent.click(screen.getByRole('button', { name: '评分 4 星' }))
     expect(screen.getByText('设为 4★？')).toBeInTheDocument()
 
     const poem2: SavedPoem = { ...poem, id: '2', title: '春晓' }
-    rerender(<PoemPlayer {...defaultProps} poem={poem2} onRate={onRate} />)
+    rerender(<PoemPlayer key={poem2.id} {...defaultProps} poem={poem2} onRate={onRate} />)
     expect(screen.queryByText('设为 4★？')).not.toBeInTheDocument()
   })
 })
