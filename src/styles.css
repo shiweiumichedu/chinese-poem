@@ -164,6 +164,7 @@ body {
   margin-left: 6px;
   letter-spacing: 0.03em;
 }
+.poem-title-group { display: flex; align-items: center; }
 .poem-list-meta { font-size: 13px; color: #8888aa; }
 .poem-list-lines { font-size: 13px; color: #6a6a8a; margin-top: 2px; }
 .empty-library { text-align: center; color: #8888aa; padding: 40px 16px; }

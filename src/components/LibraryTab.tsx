@@ -282,10 +282,12 @@ export function LibraryTab({
                     aria-label={`${poem.title} ${poem.author}`}
                     onClick={() => onPoemSelect(poem)}
                   >
-                    <span className="poem-list-title">{poem.title}</span>
-                    {poem.englishLines && poem.englishLines.length > 0 && (
-                      <span className="badge-en" aria-label="英文翻译可用">EN</span>
-                    )}
+                    <span className="poem-title-group">
+                      <span className="poem-list-title">{poem.title}</span>
+                      {poem.englishLines && poem.englishLines.length > 0 && (
+                        <span className="badge-en" aria-label="英文翻译可用">EN</span>
+                      )}
+                    </span>
                     <span className="poem-list-meta">
                       {poem.author} · {DYNASTY_LABEL[poem.dynasty] ?? poem.dynasty}
                     </span>
@@ -356,10 +358,12 @@ export function LibraryTab({
                       onClick={() => setPreview(poem)}
                       aria-label={`添加 ${poem.title}`}
                     >
-                      <span className="browse-result-title">{poem.title}</span>
-                      {poem.englishLines && poem.englishLines.length > 0 && (
-                        <span className="badge-en" aria-label="英文翻译可用">EN</span>
-                      )}
+                      <span className="poem-title-group">
+                        <span className="browse-result-title">{poem.title}</span>
+                        {poem.englishLines && poem.englishLines.length > 0 && (
+                          <span className="badge-en" aria-label="英文翻译可用">EN</span>
+                        )}
+                      </span>
                       <span className="browse-result-meta">
                         {poem.author} · {DYNASTY_LABEL[poem.dynasty] ?? poem.dynasty}
                       </span>
@@ -374,10 +378,12 @@ export function LibraryTab({
                     className="browse-result-item saved"
                     aria-label={`${poem.title}（已在诗库）`}
                   >
-                    <span className="browse-result-title">{poem.title}</span>
-                    {poem.englishLines && poem.englishLines.length > 0 && (
-                      <span className="badge-en" aria-label="英文翻译可用">EN</span>
-                    )}
+                    <span className="poem-title-group">
+                      <span className="browse-result-title">{poem.title}</span>
+                      {poem.englishLines && poem.englishLines.length > 0 && (
+                        <span className="badge-en" aria-label="英文翻译可用">EN</span>
+                      )}
+                    </span>
                     <span className="browse-result-meta">
                       {poem.author} · {DYNASTY_LABEL[poem.dynasty] ?? poem.dynasty}
                     </span>
