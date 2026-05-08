@@ -127,7 +127,7 @@ for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
 
   if (attempt > 1) {
     console.log(`\nRetry ${attempt - 1}/${MAX_RETRIES - 1} — ${remaining.length} poems remaining. Waiting 60s...`)
-    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, RETRY_DELAY_MS)
+    await new Promise(r => setTimeout(r, RETRY_DELAY_MS))
     console.log('Retrying...')
   }
 
