@@ -24,40 +24,59 @@ async function loadAuthorMap(url) {
   }
 }
 
-async function loadPoemFiles(urlPattern, dynasty, maxFileIndex, maxPoems) {
+/**
+ * Loads poems from numbered batch files.
+ * Returns { poems, indexEntries }:
+ *   poems        — full CorpusPoem objects for the first corpusMax poems (written to corpus.json)
+ *   indexEntries — compact {t,a,d,f,local?} for ALL loaded poems up to indexMax
+ */
+async function loadPoemFiles(urlPattern, dynasty, maxFileIndex, corpusMax, indexMax) {
   const poems = []
+  const indexEntries = []
+
   for (let i = 0; i <= maxFileIndex; i += 1000) {
     const url = urlPattern.replace('${N}', i)
     try {
       const batch = await fetchJson(url)
       for (const p of batch) {
         if (!p.title || !p.paragraphs?.length) continue
-        poems.push({
-          id: p.id || `${dynasty}-${poems.length}`,
-          title: t2s(p.title.trim()),
-          author: t2s((p.author || '').trim()),
-          dynasty,
-          authorBackground: '',
-          lines: p.paragraphs.map(l => l.trim()).filter(Boolean),
-        })
-        if (maxPoems && poems.length >= maxPoems) break
+
+        const title = t2s(p.title.trim())
+        const author = t2s((p.author || '').trim())
+        const isLocal = poems.length < corpusMax
+
+        if (isLocal) {
+          poems.push({
+            id: p.id || `${dynasty}-${poems.length}`,
+            title,
+            author,
+            dynasty,
+            authorBackground: '',
+            lines: p.paragraphs.map(l => l.trim()).filter(Boolean),
+          })
+        }
+
+        const entry = { t: title, a: author, d: dynasty, f: i }
+        if (isLocal) entry.local = true
+        indexEntries.push(entry)
+
+        if (indexEntries.length >= indexMax) break
       }
-      process.stdout.write(`\r  ${dynasty}: ${poems.length} poems loaded (file ${i})...`)
-      if (maxPoems && poems.length >= maxPoems) break
+      process.stdout.write(
+        `\r  ${dynasty}: ${poems.length} corpus / ${indexEntries.length} index (file ${i})...`
+      )
+      if (indexEntries.length >= indexMax) break
     } catch {
-      // File doesn't exist — we've gone past the last file
       break
     }
   }
   console.log()
-  return poems
+  return { poems, indexEntries }
 }
 
 const t2s = opencc.Converter({ from: 'hk', to: 'cn' })
 
 async function main() {
-  // Both Tang and Song poems (诗) live in 全唐诗/ (URL-encoded as %E5%85%A8%E5%94%90%E8%AF%97)
-  // Song shi (poet.song.*.json) are in the SAME directory as Tang poems — NOT in a subdirectory
   const TANG_DIR = `${RAW_BASE}/%E5%85%A8%E5%94%90%E8%AF%97`
 
   console.log('Loading author metadata...')
@@ -68,56 +87,67 @@ async function main() {
   console.log(`Tang authors: ${tangAuthors.size}, Song authors: ${songAuthors.size}`)
 
   console.log('Loading Tang poems...')
-  const tangPoems = await loadPoemFiles(
+  const tang = await loadPoemFiles(
     `${TANG_DIR}/poet.tang.\${N}.json`,
     'tang',
     57000,
-    60000
+    60000,  // corpusMax — all Tang go into corpus
+    60000   // indexMax — all Tang are local
   )
 
-  // Song shi (诗) poems are in the same 全唐诗/ directory as Tang poems
   console.log('Loading Song poems...')
-  const songPoems = await loadPoemFiles(
+  const song = await loadPoemFiles(
     `${TANG_DIR}/poet.song.\${N}.json`,
     'song',
     254000,
-    40000
+    40000,  // corpusMax — first 40k Song go into corpus
+    80000   // indexMax — next 40k Song go into index only (non-local)
   )
 
-  const corpus = [...tangPoems, ...songPoems]
+  const corpus = [...tang.poems, ...song.poems]
   console.log(`\nTotal corpus: ${corpus.length} poems`)
 
-  // Build author bio map: merged Tang + Song (Tang takes precedence on name collision)
+  const searchIndex = [...tang.indexEntries, ...song.indexEntries]
+  console.log(`Total search index: ${searchIndex.length} entries`)
+
   const authorsObj = {}
-  for (const [name, bio] of songAuthors) {
-    authorsObj[name] = bio
-  }
-  for (const [name, bio] of tangAuthors) {
-    authorsObj[name] = bio
-  }
+  for (const [name, bio] of songAuthors) authorsObj[name] = bio
+  for (const [name, bio] of tangAuthors) authorsObj[name] = bio
 
   mkdirSync('public', { recursive: true })
 
-  // Write authors.json (bios only, keyed by author name)
   const authorsJson = JSON.stringify(authorsObj)
   writeFileSync('public/authors.json', authorsJson)
   const authorsSizeMB = (Buffer.byteLength(authorsJson) / 1024 / 1024).toFixed(2)
-  console.log(`Written to public/authors.json (${authorsSizeMB} MB, ${Object.keys(authorsObj).length} authors)`)
+  console.log(`Written public/authors.json (${authorsSizeMB} MB, ${Object.keys(authorsObj).length} authors)`)
 
-  // Write corpus.json (poems with authorBackground: "" — bios loaded separately at runtime)
   const corpusJson = JSON.stringify(corpus)
   writeFileSync('public/corpus.json', corpusJson)
-
   const corpusSizeBytes = statSync('public/corpus.json').size
   const corpusSizeMB = (corpusSizeBytes / 1024 / 1024).toFixed(2)
-  const corpusSizeCompressedMB = (corpusSizeBytes * 0.33 / 1024 / 1024).toFixed(2) // ~33% after gzip
-  console.log(`Written to public/corpus.json (${corpusSizeMB} MB uncompressed, ~${corpusSizeCompressedMB} MB gzipped)`)
+  const corpusSizeCompressedMB = (corpusSizeBytes * 0.33 / 1024 / 1024).toFixed(2)
+  console.log(`Written public/corpus.json (${corpusSizeMB} MB uncompressed, ~${corpusSizeCompressedMB} MB gzipped)`)
 
   if (corpusSizeBytes > 25 * 1024 * 1024) {
     console.warn(`WARNING: corpus.json is ${corpusSizeMB}MB, may impact service worker caching`)
   }
   if (corpusSizeBytes > 40 * 1024 * 1024) {
-    console.error(`ERROR: corpus.json is ${corpusSizeMB}MB, exceeds 40MB limit — aborting`)
+    console.error(`ERROR: corpus.json exceeds 40MB limit — aborting`)
+    process.exit(1)
+  }
+
+  const indexJson = JSON.stringify(searchIndex)
+  writeFileSync('public/poem-search-index.json', indexJson)
+  const indexSizeBytes = Buffer.byteLength(indexJson)
+  const indexSizeMB = (indexSizeBytes / 1024 / 1024).toFixed(2)
+  const indexSizeCompressedMB = (indexSizeBytes * 0.25 / 1024 / 1024).toFixed(2)
+  console.log(`Written public/poem-search-index.json (${indexSizeMB} MB uncompressed, ~${indexSizeCompressedMB} MB gzipped)`)
+
+  if (indexSizeBytes > 5 * 1024 * 1024) {
+    console.warn(`WARNING: poem-search-index.json is ${indexSizeMB}MB`)
+  }
+  if (indexSizeBytes > 10 * 1024 * 1024) {
+    console.error(`ERROR: poem-search-index.json exceeds 10MB limit — aborting`)
     process.exit(1)
   }
 }
