@@ -69,7 +69,6 @@ function translateBatch(batch) {
   return JSON.parse(stripMarkdown(result.stdout.trim()))
 }
 
-const translations = { ...existing }
 let totalSuccess = 0
 let totalFail = 0
 
@@ -136,8 +135,9 @@ for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
   if (failed === 0) break
 }
 
-console.log(`\nDone! ${OUTPUT_FILE} now has ${Object.keys(translations).length} translations total.`)
-console.log(`This run: ${successCount} succeeded, ${failCount} failed/skipped.`)
-if (failCount > 0) {
+const finalCount = Object.keys(JSON.parse(readFileSync(OUTPUT_FILE, 'utf8'))).length
+console.log(`\nDone! ${OUTPUT_FILE} now has ${finalCount} translations total.`)
+console.log(`This run: ${totalSuccess} succeeded, ${totalFail} failed/skipped.`)
+if (totalFail > 0) {
   console.log('Re-run to retry failed batches.')
 }
