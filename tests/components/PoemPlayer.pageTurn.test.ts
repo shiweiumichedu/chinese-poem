@@ -1,4 +1,4 @@
-import { computePageTurnScroll } from '../../src/components/PoemPlayer'
+import { computePageTurnScroll } from '../../src/utils/poemPlayerScroll'
 
 type Rect = { top: number; bottom: number; height: number }
 const r = (top: number, bottom: number): Rect => ({ top, bottom, height: bottom - top })
